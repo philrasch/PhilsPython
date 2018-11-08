@@ -1,0 +1,3 @@
+[console_scripts]
+cfchecks = cfchecker:cfchecks_main
+

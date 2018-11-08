@@ -1,0 +1,218 @@
+Received: from Emailgw01.pnnl.gov (192.101.109.61) by EX10CASHUB02.pnnl.gov
+ (130.20.128.185) with Microsoft SMTP Server (TLS) id 14.3.181.6; Wed, 16 Jul
+ 2014 14:40:25 -0700
+X-Ironport-SG: DEXGroup
+X-Ironport-SBRS: 0.4
+X-IPAS-Result: AkAjABfwxlMMg4FWaGdsb2JhbABWA4JHZDVTBLB0PpFZHAUBBYVzgVMBgR8PDQsDCAcUKYQKLUcFEgEsED4GJgEEDgEECIddXQMCA8QNhkUXjxohEBiDHIEWAQScaYVxhlaJeVA
+Received: from osmtp-mefxp.att-mail.com (HELO fbdbrel05.localdomain)
+ ([12.131.129.86])  by Emailgw01x.pnnl.gov with ESMTP/TLS/ADH-AES256-SHA; 16
+ Jul 2014 14:40:24 -0700
+Received: from fbecsscrub17.seg.att.com (unknown [192.168.175.135])	by
+ fbdbrel05.localdomain (Postfix) with ESMTP id 2338015F8078	for
+ <Philip.Rasch@pnl.gov>; Wed, 16 Jul 2014 21:40:24 +0000 (GMT)
+Received: from fbdbrel02.localdomain ([192.168.175.162]) by
+ fbecsscrub17.seg.att.com with ESMTP id yYqt9j6F2GyHzyak for
+ <Philip.Rasch@pnl.gov>; Wed, 16 Jul 2014 21:40:23 +0000 (GMT)
+Received: from Emailgw01.pnnl.gov (unknown [192.101.109.61])	by
+ fbdbrel02.localdomain (Postfix) with ESMTPS id 4B8F53C70054	for
+ <Philip.Rasch@pnl.gov>; Wed, 16 Jul 2014 21:40:23 +0000 (GMT)
+X-Ironport-SG: FireEYE
+X-Ironport-SBRS: None
+X-IPAS-Result: AsARABfwxlPAZW05/2dsb2JhbABWA4JHZDVTBLB0PpFZHAUBBYdGAYEfdoQKLUcFEgEsED4GJgEEDgEECIddXQUDxA2GRRePGiEQGIMcgRYBBJxphXGGVoYZg2BQ
+Received: from fe-raven.pnnl.gov (HELO raven.pnnl.gov) ([192.101.109.57])  by
+ Emailgw01.pnnl.gov with ESMTP/TLS/DHE-RSA-AES256-SHA; 16 Jul 2014 14:40:22
+ -0700
+Received: by raven.pnnl.gov (Postfix, from userid 600)	id 3hDBpY6kHqz8C40N;
+ Wed, 16 Jul 2014 14:40:09 -0700 (PDT)
+Received: from emailgw02.pnnl.gov (emailgw02.pnnl.gov [192.101.109.63])	(using
+ TLSv1 with cipher RC4-SHA (128/128 bits))	(No client certificate requested)
+	by raven.pnnl.gov (Postfix) with ESMTPS id 3hDBpJ3hPDz8C40W	for
+ <Philip.Rasch@pnl.gov>; Wed, 16 Jul 2014 14:40:08 -0700 (PDT)
+X-Ironport-SG: OK_Domains
+X-Ironport-SBRS: 5.6
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: Aq8BABfwxlOQqwE1nGdsb2JhbABWA4JHgRlTBMMLIQEFh0YBgQkWDwEBAQEBBg0JCRQphAotRwUSASwQRCYBBA4BBAiIOgUDxA2GRRePGiEQGIMcgRYFnGmFcYZWiXlQ
+X-IPAS-Result: Aq8BABfwxlOQqwE1nGdsb2JhbABWA4JHgRlTBMMLIQEFh0YBgQkWDwEBAQEBBg0JCRQphAotRwUSASwQRCYBBA4BBAiIOgUDxA2GRRePGiEQGIMcgRYFnGmFcYZWiXlQ
+X-IronPort-AV: E=Sophos;i="5.01,673,1400050800"; 
+   d="scan'208,217";a="66548102"
+Received: from sawtooth.nas.edu ([144.171.1.53])  by emailgw02.pnnl.gov with
+ ESMTP; 16 Jul 2014 14:40:07 -0700
+X-SBRS: None
+X-REMOTE-IP: 144.171.38.13
+X-IronPort-AV: E=Sophos;i="5.01,673,1400040000"; 
+   d="scan'208,217";a="27568"
+Received: from unknown (HELO ENA13.nrc.na.int) ([144.171.38.13])  by
+ sawtooth2.nas.edu with ESMTP; 16 Jul 2014 17:40:00 -0400
+Received: from ENA3000.nrc.na.int ([144.171.38.131]) by ENA13.nrc.na.int
+ ([::1]) with mapi; Wed, 16 Jul 2014 17:35:05 -0400
+From: "Dunlea, Edward" <EDunlea@nas.edu>
+To: "Rasch, Philip J (Philip.Rasch@pnl.gov)" <Philip.Rasch@pnl.gov>
+CC: Marcia McNutt <marcia.mcnutt@gmail.com>
+Date: Wed, 16 Jul 2014 17:35:04 -0400
+Subject: update?
+Thread-Topic: update?
+Thread-Index: Ac+hPY6S/38IZCMiTmqWQHwmKHZDYw==
+Message-ID: <3D74B5CF1C787949B934B40E82D5E71BA7D6D2DB07@ENA3000.nrc.na.int>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+acceptlanguage: en-US
+	boundary="_000_3D74B5CF1C787949B934B40E82D5E71BA7D6D2DB07ENA3000nrcnai_"
+MIME-Version: 1.0
+X-MEF-SCANNED: CLEAN
+Return-Path: EDunlea@nas.edu
+X-MS-Exchange-Organization-AuthSource: ex10cashub02.pnnl.gov
+X-MS-Exchange-Organization-AuthAs: Internal
+X-MS-Exchange-Organization-AuthMechanism: 10
+X-MS-Exchange-Organization-AVStamp-Mailbox: MSFTFF;1;0;0 0 0
+Content-type: multipart/alternative;
+	boundary="B_3498052815_4477234"
+
+> This message is in MIME format. Since your mail reader does not understand
+this format, some or all of this message may not be legible.
+
+--B_3498052815_4477234
+Content-type: text/plain;
+	charset="ISO-8859-1"
+Content-transfer-encoding: quoted-printable
+
+Phil,
+=20
+I=B9m out of town for the next couple of days, but I wanted to check in on ho=
+w
+things were going with Chapter 3.
+=20
+Marcia and I spoke the other day and we are getting quite concerned about
+our timeline. Any chance we could see a draft of Chapter 3 in the next week
+or so?=20
+=20
+I realize that you have already been working very, very hard on this, so I
+really do hate to start putting timetables down, but we do need to get this
+done. I will also offer again - if there is anything that I (or another
+committee  member) can help with at this stage, please do not hesitate to
+ask.
+=20
+Thanks!
+=20
+Ed
+=20
+-----
+Edward Dunlea, Ph.D.
+Senior Program Officer
+Board on Atmospheric Sciences and Climate
+The National Academy of Sciences
+202-334-1334
+edunlea@nas.edu
+Subscribe to newsletter: http://dels.nas.edu/subscribe
+=20
+
+
+
+--B_3498052815_4477234
+Content-type: text/html;
+	charset="ISO-8859-1"
+Content-transfer-encoding: quoted-printable
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml" xmlns:o=3D"urn:schemas-microsof=
+t-com:office:office" xmlns:w=3D"urn:schemas-microsoft-com:office:word" xmlns:m=
+=3D"http://schemas.microsoft.com/office/2004/12/omml" xmlns=3D"http://www.w3.org=
+/TR/REC-html40">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8">
+<meta name=3D"Generator" content=3D"Microsoft Word 14 (filtered medium)">
+<style><!--
+/* Font Definitions */
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:11.0pt;
+	font-family:"Calibri","sans-serif";}
+a:link, span.MsoHyperlink
+	{mso-style-priority:99;
+	color:blue;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{mso-style-priority:99;
+	color:purple;
+	text-decoration:underline;}
+p.MsoPlainText, li.MsoPlainText, div.MsoPlainText
+	{mso-style-priority:99;
+	mso-style-link:"Plain Text Char";
+	margin:0in;
+	margin-bottom:.0001pt;
+	font-size:11.0pt;
+	font-family:"Calibri","sans-serif";}
+span.EmailStyle17
+	{mso-style-type:personal-compose;
+	font-family:"Calibri","sans-serif";
+	color:windowtext;}
+span.PlainTextChar
+	{mso-style-name:"Plain Text Char";
+	mso-style-priority:99;
+	mso-style-link:"Plain Text";
+	font-family:"Calibri","sans-serif";}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	font-family:"Calibri","sans-serif";}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;}
+div.WordSection1
+	{page:WordSection1;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext=3D"edit" spidmax=3D"1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext=3D"edit">
+<o:idmap v:ext=3D"edit" data=3D"1" />
+</o:shapelayout></xml><![endif]-->
+</head>
+<body lang=3D"EN-US" link=3D"blue" vlink=3D"purple">
+<div class=3D"WordSection1">
+<p class=3D"MsoNormal">Phil,<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal">I=B9m out of town for the next couple of days, but I wan=
+ted to check in on how things were going with Chapter 3.
+<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal">Marcia and I spoke the other day and we are getting qu=
+ite concerned about our timeline. Any chance we could see a draft of Chapter=
+ 3 in the next week or so?
+<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoPlainText">I realize that you have already been working very, =
+very hard on this, so I really do hate to start putting timetables down, but=
+ we do need to get this done. I will also offer again - if there is anything=
+ that I (or another committee
+ member) can help with at this stage, please do not hesitate to ask.<o:p></=
+o:p></p>
+<p class=3D"MsoPlainText"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoPlainText">Thanks!<o:p></o:p></p>
+<p class=3D"MsoPlainText"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoPlainText">Ed<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal">-----<o:p></o:p></p>
+<p class=3D"MsoNormal">Edward Dunlea, Ph.D.<o:p></o:p></p>
+<p class=3D"MsoNormal">Senior Program Officer<o:p></o:p></p>
+<p class=3D"MsoNormal">Board on Atmospheric Sciences and Climate<o:p></o:p></=
+p>
+<p class=3D"MsoNormal">The National Academy of Sciences<o:p></o:p></p>
+<p class=3D"MsoNormal">202-334-1334<o:p></o:p></p>
+<p class=3D"MsoNormal">edunlea@nas.edu<o:p></o:p></p>
+<p class=3D"MsoNormal">Subscribe to newsletter: http://dels.nas.edu/subscribe=
+<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+</div>
+</body>
+</html>
+
+
+--B_3498052815_4477234--
+

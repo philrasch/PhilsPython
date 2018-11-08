@@ -1,0 +1,13 @@
+LICENSE
+MANIFEST.in
+README
+setup.cfg
+setup.py
+src/cfchecker/__init__.py
+src/cfchecker/cfchecks.py
+src/cfchecker.egg-info/PKG-INFO
+src/cfchecker.egg-info/SOURCES.txt
+src/cfchecker.egg-info/dependency_links.txt
+src/cfchecker.egg-info/entry_points.txt
+src/cfchecker.egg-info/not-zip-safe
+src/cfchecker.egg-info/top_level.txt
