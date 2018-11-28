@@ -9,8 +9,8 @@ import cdms2
 import cdutil
 from scipy.interpolate import interp1d
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from metrics.packages.amwg.derivations import *
-from metrics.packages.amwg.derivations import qflx_lhflx_conversions as flxconv
+#from metrics.packages.amwg.derivations import *
+#from metrics.packages.amwg.derivations import qflx_lhflx_conversions as flxconv
 
 from mpl_toolkits.basemap import Basemap
 #from netCDF4 import Dataset, date2index
