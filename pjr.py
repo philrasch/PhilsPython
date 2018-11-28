@@ -2,10 +2,15 @@
 """Phils useful functions"""
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.colors as mcolors
 import numpy as np
 import cdms2
 import cdutil
 from scipy.interpolate import interp1d
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from metrics.packages.amwg.derivations import *
+from metrics.packages.amwg.derivations import qflx_lhflx_conversions as flxconv
 
 from mpl_toolkits.basemap import Basemap
 #from netCDF4 import Dataset, date2index
@@ -17,7 +22,7 @@ def make_colormap(seq):
     and in the interval (0,1).
     """
     seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
-    print "seq",seq
+#   print "seq",seq
     cdict = {'red': [], 'green': [], 'blue': []}
     for i, item in enumerate(seq):
         if isinstance(item, float):
@@ -27,6 +32,8 @@ def make_colormap(seq):
             cdict['green'].append([item, g1, g2])
             cdict['blue'].append([item, b1, b2])
     return mcolors.LinearSegmentedColormap('CustomMap', cdict)
+
+
 def diverge_map(high=(1., 0., 0.), low=(0.0, 0., 1.)):
 #def diverge_map(high=(0.565, 0.392, 0.173), low=(0.094, 0.310, 0.635)):
     '''
@@ -81,3 +88,249 @@ def onedplot(lat1, data1, lat2, data2):
     dy = np.array(y2-y1);
     ax1.plot(xh, dy);
         
+def findNiceContours(data,nlevs=None,rmClev=None,sym=None,verbose=None):
+    """Find Nice Contours
+    data = 2d numpy array (or data structure base on numpy) ordered (latitude, pressure)
+    nlevs = approximate number of contour levels to return (default 10)
+    rmClev = if defined delete the contour level near this value
+    sym = if defined make the contour intervals symmetric about zero
+    verbose = if defined, print out some info to help debug
+    """
+    if nlevs is None: nlevs = 9
+    clevs = np.linspace(data.min(), data.max(), nlevs)
+#    if nozero is None: nozero=0
+#    if sym is None: sym=0
+    zmax = data.max()
+    zmin = data.min()
+    if not verbose is None: print "zmin, zmax", zmin, zmax
+    if zmax == zmin: 
+        if (zmax != 0): 
+          return np.array([0.9*zmax,zmax,1.1*zmax]);
+        else:
+          return np.array([-0.1,0.0, 0.1]);
+    if not sym is None: 
+        zcom = max(abs(zmin),abs(zmax));
+        zmin = -zcom;
+        zmax = +zcom;
+        if not verbose is None: print "zmin, zmax in sym", zmin, zmax
+    zrange = zmax/(zmin+1.e-20)
+    okints = [0.1, 0.2, 0.5,1,2,5,10,20] # acceptable values for contour intervals
+    okints = np.array(okints)
+    zinc = (zmax-zmin)/nlevs;
+    if not verbose is None: print "zinc", zinc
+    pow = int(np.log10(zinc))
+    if not verbose is None: print "pow", pow
+    cints = okints*(10.**pow);
+    if not verbose is None: print "cints", cints
+    nlevsout = (zmax-zmin)/cints;
+    if not verbose is None: print "nlevsout",nlevsout
+#    np.where(V0 == V0.max())
+    f1 = abs(nlevsout-nlevs)
+    if not verbose is None: print "f1", f1
+    f2 = np.where(f1 == f1.min());
+    if not verbose is None: print "f2", f2
+    nlevbest = int(f2[0])
+    if not verbose is None: print "nlevbest, cintsbest",nlevbest, cints[nlevbest]
+    if not verbose is None: print "f3", zmin/cints[nlevbest]
+    zminout = int(zmin/cints[nlevbest])*cints[nlevbest];
+    zmaxout = int(zmax/cints[nlevbest])*(cints[nlevbest]);
+    ninc = int((zmaxout-zminout)/cints[nlevbest] + 1.00000001);
+    if not verbose is None: print "ninc, zminout, zmaxout", ninc, zminout, zmaxout
+    clevs = np.arange(zminout, zmaxout*1.001, cints[nlevbest]);
+    if not rmClev is None:    
+        f4 = abs((clevs-rmClev)/max(abs(clevs)))
+        if not verbose is None: print "f4", f4
+        alist = np.argmin(f4);
+        if not verbose is None: print "alist", alist
+        if (np.size(alist) > 0): 
+            zlist = np.where(clevs != clevs[alist])
+            if not verbose is None: print "zlist", zlist
+            if (np.size(zlist)> 0): 
+                if not verbose is None: print"list of nonzero contour levels", zlist
+                clevs = clevs[zlist];
+    return clevs;
+
+
+def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, axesa=None, fig=None):
+    """Create a zonal mean contour plot of one variable
+    axesa = the axes that we make the plot on 
+    data = 2d numpy array (or data structure base on numpy) ordered (latitude, pressure)
+    x = 1d numpy array of latitude
+    y = 1d numpy array of pressures (or pseudo pressure (like eta))
+    plotOpt is a optional dictionary with plotting options:
+      'scale_factor': multiply values with this factor before plotting
+      'units': a units label for the colorbar
+      'clevs': use list of values as contour intervals
+      'cmap': the color map to use
+      'colorbar': location of colorbar ('bot','top','left','right','None')
+      'rmClev': contour level to delete; frequently Zero, see findNiceContours
+      'title': a title for the plot
+      'ybot': if present, the pressure at the plot botnetom
+      'ytop': if present, the pressure at the top
+    modelLevels:  If present a small side panel will be drawn with lines for each model level
+    surfacePressure: a list (dimension len(x)) of surface pressure values. If present, these will
+        be used to mask out regions below the surface
+    """
+    # explanation of axes:
+    #   ax1: primary coordinate system latitude vs. pressure (left ticks on y axis)
+    #   ax2: twinned axes for altitude coordinates on right y axis
+    #   axm: small side panel with shared y axis from ax2 for display of model levels
+    # right y ticks and y label will be drawn on axr if modelLevels are given, else on ax2
+    #   axr: pointer to "right axis", either ax2 or axm
+
+    if plotOpt is None: plotOpt = {}
+
+    labelFontSize = "small"
+    # create figure and axes if they are not supplied
+    if fig is None:
+        fig = plt.gcf() # get current figure
+    if axesa is None: axesa = plt.gca()
+    ax1 = axesa
+
+
+    # scale data if requested
+    scale_factor = plotOpt.get('scale_factor', 1.0)
+    pdata = data * scale_factor
+    
+    # determine contour levels to be used; nice contours are chosen if not supplied
+    # the contour value rmClev will be removed if requested (often the zero contour)
+    clevs = plotOpt.get("clevs") 
+    rmClev = plotOpt.get("rmClev")
+
+#    print "plotzmf rmClev", rmClev
+    if clevs is None:
+        clevs = findNiceContours(data,rmClev=rmClev)
+#    print "data range",data.min(), data.max()
+#    print "clevs", clevs
+
+# choose a colormap if not supplied
+    cmap = plotOpt.get("cmap")
+    if cmap is None:
+        cmap = mpl.cm.get_cmap()
+    norm = mpl.colors.BoundaryNorm(clevs,cmap.N)
+
+    # draw the (filled) contours
+    contour = ax1.contourf(x, y, pdata, levels=clevs, norm=norm,
+                        cmap=cmap,
+                        extend='both')
+    contour.cmap.set_under('yellow')
+    contour.cmap.set_over('cyan')
+    # mask out surface pressure if given
+    if not surfacePressure is None: 
+        ax1.fill_between(x, surfacePressure, surfacePressure.max(), color="white")    
+    # add a title
+    title = plotOpt.get('title', 'Vertical cross section')
+    ax1.set_title(title)
+
+# steal some space and allocate axes for a z coordinate at right of plot
+    divider = make_axes_locatable(ax1) # create a divider
+    ax_z = divider.new_horizontal(size="1%", pad=0.25,frameon=False) # steal z space from end
+    ax_z.xaxis.set_major_locator(plt.NullLocator())
+#    ax_z.set_axis_off()
+    fig.add_axes(ax_z)
+
+    # add colorbar
+    # Note: use of the ticks keyword forces colorbar to draw all labels
+    colorbar = plotOpt.get('colorbar', 'bot')
+    fmt = mpl.ticker.FormatStrFormatter("%g")
+    if colorbar == 'bot':
+        cbar = fig.colorbar(contour, ax=ax1, orientation='horizontal', shrink=1.05, pad=0.2,
+                            ticks=clevs, format=fmt)
+        cbar.set_label(plotOpt.get('units', ''))
+        for t in cbar.ax.get_xticklabels():
+            t.set_fontsize(labelFontSize)
+    if (colorbar == 'right' or colorbar == 'rightnd'):
+        ax_cb2 = divider.new_horizontal(size="10%", pad=0.3) # steal colorbar space from end
+        fig.add_axes(ax_cb2)
+        if colorbar == 'right':
+            cbar = fig.colorbar(contour, cax=ax_cb2,  orientation="vertical")
+            for t in cbar.ax.get_yticklabels():
+                t.set_fontsize(labelFontSize)
+            cbar.set_label(plotOpt.get('units', ''))
+        else:
+            plt.axis('off')
+
+
+        # create an axes on the right side of ax. The width of cax will be 5%
+        # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+        #divider = make_axes_locatable(ax1)
+        #cax = divider.append_axes("right", size="5%", pad=1.05)
+        #cax = fig.add_axes([0.8, 0.1, 0.03, 0.8]) 
+        #cbar = fig.colorbar(contour, ax=ax1, pad=0.2, use_gridspec=True)
+
+    # set up y axes: log pressure labels on the left y axis, altitude labels
+    # according to model levels on the right y axis
+    ax1.set_ylabel("Pressure [hPa]")
+    ax1.set_yscale('log')
+    ax1.yaxis.set_label_coords(-0.15, 0.5)
+#    print "y", y
+    xmesh,ymesh = np.meshgrid(x, y)
+#    print "ymesh range", ymesh.min(), ymesh.max()
+    ybotd = 10.*np.ceil(ymesh.max()/10.)
+    ytopd = ymesh.min()
+#    print "ybot, ytop defaults", ybotd, ytopd
+    ybot = plotOpt.get('ybot', ybotd)
+    ytop = plotOpt.get('ytop', ytopd)
+#    ybot = 1000.
+#    ytop = 1.
+    ax1.set_ylim(ybot, ytop) # avoid truncation of 1000 hPa
+    subs = [1,2,5]
+    if ybot/ytop < 20.:
+        subs = [1,2,3,4,5,6,7,8,9]
+#    print "subs", subs
+    ax1.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+    y1loc = mpl.ticker.LogLocator(base=10., subs=subs)
+    ax1.yaxis.set_major_locator(y1loc)
+    fmt = mpl.ticker.FormatStrFormatter("%g")
+    ax1.yaxis.set_major_formatter(fmt)
+    for t in ax1.get_yticklabels():
+        t.set_fontsize(labelFontSize)
+   # change values and font size of x labels
+    ax1.set_xlabel('Latitude [degrees]')
+    ax1.xaxis.labelpad = 0.05
+    xloc = mpl.ticker.FixedLocator(np.arange(-90.,91.,30.))
+    ax1.xaxis.set_major_locator(xloc)
+    for t in ax1.get_xticklabels():
+        t.set_fontsize(labelFontSize)
+  
+    
+    # calculate altitudes from pressure values (use fixed scale height)
+    z0 = 8.400    # scale height for pressure_to_altitude conversion [km]
+    altitude = z0 * np.log(1000./ymesh)
+#    altitude = z0 * np.log(1015.23/ymesh)
+    # add second y axis for altitude scale 
+#   ax2 = ax1.twinx()
+   # draw horizontal lines to the right to indicate model levels
+    if not modelLevels is None:
+        pos = ax1.get_position()
+        ax_z.set_xlim(0., 1.)
+        ax_z.xaxis.set_visible(False)
+        modelLev = ax_z.hlines(altitude, 0., 1., color='0.5')
+        axr = ax_z     # specify y axis for right tick marks and labels
+        # turn off tick labels of ax2
+        for t in ax_z.get_yticklabels():
+            t.set_visible(False)
+        label_xcoor = 4.7
+    else:
+        axr = ax_z
+        label_xcoor = 7.
+    axr.set_ylabel("Altitude [km]")
+    axr.yaxis.set_label_coords(label_xcoor, 0.5)
+#    axr.yaxis.labelpad = 42.
+    axr.yaxis.set_ticks_position('left')
+#   axr.yaxis.set_label_coords(10.,0.5)
+    altsub = altitude[(ymesh >= ytop) & (ymesh <= ybot)]
+#    altsub = altitude
+#    axr.set_ylim(altitude.min(), altitude.max())
+#    print "pressure and altitude range", ybot, ytop, altsub.min(), altsub.max()
+    axr.set_ylim(altsub.min(), altsub.max())
+    yrloc = mpl.ticker.MaxNLocator(steps=[1,2,5,10])
+    axr.yaxis.set_major_locator(yrloc)
+    axr.yaxis.set_tick_params(pad=0)
+    axr.yaxis.tick_left()
+    for t in axr.yaxis.get_majorticklines():
+        t.set_visible(False)
+    for t in axr.get_yticklabels():
+        t.set_fontsize(labelFontSize)
+print "pjr.py complete"
+help(findNiceContours)
