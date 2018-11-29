@@ -333,4 +333,4 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
     for t in axr.get_yticklabels():
         t.set_fontsize(labelFontSize)
 print "pjr.py complete"
-help(findNiceContours)
+#help(findNiceContours)
