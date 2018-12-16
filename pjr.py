@@ -213,14 +213,24 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
     contour = ax1.contourf(x, y, pdata, levels=clevs, norm=norm,
                         cmap=cmap,
                         extend='both')
-    contour.cmap.set_under('yellow')
-    contour.cmap.set_over('cyan')
+    contour.cmap.set_over('yellow')
+    contour.cmap.set_under('magenta')
     # mask out surface pressure if given
     if not surfacePressure is None: 
         ax1.fill_between(x, surfacePressure, surfacePressure.max(), color="white")    
     # add a title
-    title = plotOpt.get('title', 'Vertical cross section')
-    ax1.set_title(title)
+    if hasattr(data,'long_name'):
+        deftitle = data.long_name
+#        print "deftitle set to longname", deftitle
+        #    variance.units = '(%s)^2'%var.units
+    else:
+#        print "no long_name attribute"
+        deftitle = ''
+    ltitle = plotOpt.get('ltitle',deftitle)
+    ax1.set_title(ltitle,loc='left')
+    defrtitle = ''
+    rtitle = plotOpt.get('rtitle',defrtitle)
+    ax1.set_title(rtitle,loc='right')
 
 # steal some space and allocate axes for a z coordinate at right of plot
     divider = make_axes_locatable(ax1) # create a divider
@@ -229,6 +239,18 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
 #    ax_z.set_axis_off()
     fig.add_axes(ax_z)
 
+    if hasattr(data,'units'):
+        defunits = '('+data.units+')'
+ #       print "has units", defunits
+        #    variance.units = '(%s)^2'%var.units
+    else:
+#        print "no units attribute"
+        defunits = ''
+        # if type(data) is np.ndarray:
+        #    print "ndarray"
+        #else:
+        #    defunits = 'a title'
+    units = plotOpt.get('units',defunits)
     # add colorbar
     # Note: use of the ticks keyword forces colorbar to draw all labels
     colorbar = plotOpt.get('colorbar', 'bot')
@@ -236,7 +258,7 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
     if colorbar == 'bot':
         cbar = fig.colorbar(contour, ax=ax1, orientation='horizontal', shrink=1.05, pad=0.2,
                             ticks=clevs, format=fmt)
-        cbar.set_label(plotOpt.get('units', ''))
+        cbar.set_label(units)
         for t in cbar.ax.get_xticklabels():
             t.set_fontsize(labelFontSize)
     if (colorbar == 'right' or colorbar == 'rightnd'):
@@ -246,7 +268,7 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
             cbar = fig.colorbar(contour, cax=ax_cb2,  orientation="vertical")
             for t in cbar.ax.get_yticklabels():
                 t.set_fontsize(labelFontSize)
-            cbar.set_label(plotOpt.get('units', ''))
+            cbar.set_label(units)
         else:
             plt.axis('off')
 
