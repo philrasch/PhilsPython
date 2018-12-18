@@ -162,10 +162,12 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
       'units': a units label for the colorbar
       'clevs': use list of values as contour intervals
       'cmap': the color map to use
+      'cabv': the above color
+      'cbel': the below color
       'colorbar': location of colorbar ('bot','top','left','right','None')
       'rmClev': contour level to delete; frequently Zero, see findNiceContours
       'title': a title for the plot
-      'ybot': if present, the pressure at the plot botnetom
+      'ybot': if present, the pressure at the plot bottom
       'ytop': if present, the pressure at the top
     modelLevels:  If present a small side panel will be drawn with lines for each model level
     surfacePressure: a list (dimension len(x)) of surface pressure values. If present, these will
@@ -213,8 +215,10 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
     contour = ax1.contourf(x, y, pdata, levels=clevs, norm=norm,
                         cmap=cmap,
                         extend='both')
-    contour.cmap.set_over('yellow')
-    contour.cmap.set_under('magenta')
+    cabv = plotOpt.get('cabv','yellow')
+    cbel = plotOpt.get('cbel','magenta')
+    contour.cmap.set_over(cabv)
+    contour.cmap.set_under(cbel)
     # mask out surface pressure if given
     if not surfacePressure is None: 
         ax1.fill_between(x, surfacePressure, surfacePressure.max(), color="white")    
@@ -268,7 +272,8 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
             cbar = fig.colorbar(contour, cax=ax_cb2,  orientation="vertical")
             for t in cbar.ax.get_yticklabels():
                 t.set_fontsize(labelFontSize)
-            cbar.set_label(units)
+            #cbar.set_label(units)
+            cbar.ax.set_title(units,pad=5)
         else:
             plt.axis('off')
 
