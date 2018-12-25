@@ -269,7 +269,7 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
         ax_cb2 = divider.new_horizontal(size="10%", pad=0.3) # steal colorbar space from end
         fig.add_axes(ax_cb2)
         if colorbar == 'right':
-            cbar = fig.colorbar(contour, cax=ax_cb2,  orientation="vertical")
+            cbar = fig.colorbar(contour, cax=ax_cb2, ticks=clevs, orientation="vertical")
             for t in cbar.ax.get_yticklabels():
                 t.set_fontsize(labelFontSize)
             #cbar.set_label(units)
