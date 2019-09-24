@@ -13,6 +13,9 @@ for a in f.attributes.keys():
 
 # Get the names of the dimensions present in files
 dims = f.listdimension();
+tindex = dims.index('TIME')
+print "tindex", tindex
+print "starttime", f[dims[tindex]][0]
 
 print dims;
 for dim in dims:
