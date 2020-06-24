@@ -23,6 +23,9 @@ import matplotlib.colors as mcolors
 
 import warnings
 
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+
 # original code from 
 # https://stackoverflow.com/questions/28934767/best-way-to-interpolate-a-numpy-ndarray-along-an-axis
 def interp_along_axis(y, x, newx, axis, inverse=False, method='linear'):
