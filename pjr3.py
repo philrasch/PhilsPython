@@ -6,6 +6,7 @@ import matplotlib as mpl
 import matplotlib.colors as mcolors
 import numpy as np
 import string
+import copy
 import cartopy.crs as ccrs
 import xarray as xr
 #import cdms2
@@ -348,6 +349,7 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
     cmap = plotOpt.get("cmap")
     if cmap is None:
         cmap = mpl.cm.get_cmap()
+    cmap = copy.copy(cmap)
     norm = mpl.colors.BoundaryNorm(clevs,cmap.N)
 
     # draw the (filled) contours
