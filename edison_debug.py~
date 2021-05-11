@@ -1,8 +1,0 @@
-from pjr import *
-
-dir1 = "/global/cscratch1/sd/leebrent/climos/output/f.e11.FAMIP.f09_f09_same_setting_LENS/"
-f1 = "20161118.beta0.F20TRCOSP.ne30_ne30.edison_ANN_climo.nc"
-
-jname = join(([dirname,fname])
-
-print "jname"
