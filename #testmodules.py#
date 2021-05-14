@@ -1,3 +1,0 @@
-module mod1
-
-    print "stop for debug", 1./0.
