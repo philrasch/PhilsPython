@@ -17,4 +17,5 @@ dependencies:
   - statsmodels
   - xhistogram
   - ncview
+  - nodejs
 prefix: /Users/d3x345/opt/miniconda3/envs/pjrpy3
