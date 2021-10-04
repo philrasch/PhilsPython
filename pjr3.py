@@ -9,6 +9,7 @@ import string
 import copy
 import cartopy.crs as ccrs
 import xarray as xr
+import os
 #import cdms2
 #import cdutil
 from scipy.interpolate import interp1d
@@ -29,7 +30,7 @@ register_matplotlib_converters()
 
 # original code from 
 # https://stackoverflow.com/questions/28934767/best-way-to-interpolate-a-numpy-ndarray-along-an-axis
-def interp_along_axis(y, x, newx, axis, inverse=False, method='linear'):
+def interp_along_axis(y, x, newx, axis, inverse=False, method='linear', verbose=False):
     """ Interpolate vertical profiles, e.g. of atmospheric variables
     using vectorized numpy operations
 
@@ -81,8 +82,9 @@ def interp_along_axis(y, x, newx, axis, inverse=False, method='linear'):
     # Sanity checks
     if np.any(_newx[0] < _x[0]) or np.any(_newx[-1] > _x[-1]):
         # raise ValueError('This function cannot extrapolate')
-        warnings.warn("Some values are outside the interpolation range. "
-                      "These will be filled with NaN")
+        if verbose:
+            warnings.warn("Some values are outside the interpolation range. "
+                          "These will be filled with NaN")
     if np.any(np.diff(_x, axis=0) < 0):
         raise ValueError('x should increase monotonically')
     if np.any(np.diff(_newx, axis=0) < 0):
@@ -155,6 +157,146 @@ def interp_along_axis(y, x, newx, axis, inverse=False, method='linear'):
         newy = newy[::-1, ...]
 
     return np.moveaxis(newy, 0, axis)
+
+import numpy as np
+import warnings
+
+def interp_along_axis_V2(y, x, newx, axis, inverse=False, method='linear'):
+    """ Interpolate vertical profiles, e.g. of atmospheric variables
+    using vectorized numpy operations
+
+    This function assumes that the x-xoordinate increases monotonically
+
+    ps:
+    * Updated to work with irregularly spaced x-coordinate.
+    * Updated to work with irregularly spaced newx-coordinate
+    * Updated to easily inverse the direction of the x-coordinate
+    * Updated to fill with nans outside extrapolation range
+    * Updated to include a linear interpolation method as well
+        (it was initially written for a cubic function)
+
+    Peter Kalverla
+    March 2018
+
+This version was downloaded from
+https://stackoverflow.com/questions/28934767/best-way-to-interpolate-a-numpy-ndarray-along-an-axis
+
+
+    --------------------
+    More info:
+    Algorithm from: http://www.paulinternet.nl/?page=bicubic
+    It approximates y = f(x) = ax^3 + bx^2 + cx + d
+    where y may be an ndarray input vector
+    Returns f(newx)
+
+    The algorithm uses the derivative f'(x) = 3ax^2 + 2bx + c
+    and uses the fact that:
+    f(0) = d
+    f(1) = a + b + c + d
+    f'(0) = c
+    f'(1) = 3a + 2b + c
+
+    Rewriting this yields expressions for a, b, c, d:
+    a = 2f(0) - 2f(1) + f'(0) + f'(1)
+    b = -3f(0) + 3f(1) - 2f'(0) - f'(1)
+    c = f'(0)
+    d = f(0)
+
+    These can be evaluated at two neighbouring points in x and
+    as such constitute the piecewise cubic interpolator.
+    """
+
+    # View of x and y with axis as first dimension
+    if inverse:
+        _x = np.moveaxis(x, axis, 0)[::-1, ...]
+        _y = np.moveaxis(y, axis, 0)[::-1, ...]
+        _newx = np.moveaxis(newx, axis, 0)[::-1, ...]
+    else:
+        _y = np.moveaxis(y, axis, 0)
+        _x = np.moveaxis(x, axis, 0)
+        _newx = np.moveaxis(newx, axis, 0)
+
+    # Sanity checks
+    if np.any(_newx[0] < _x[0]) or np.any(_newx[-1] > _x[-1]):
+        # raise ValueError('This function cannot extrapolate')
+        warnings.warn("Some values are outside the interpolation range. "
+                      "These will be filled with NaN")
+    if np.any(np.diff(_x, axis=0) < 0):
+        raise ValueError('x should increase monotonically')
+    if np.any(np.diff(_newx, axis=0) < 0):
+        raise ValueError('newx should increase monotonically')
+
+    # Cubic interpolation needs the gradient of y in addition to its values
+    if method == 'cubic':
+        # For now, simply use a numpy function to get the derivatives
+        # This produces the largest memory overhead of the function and
+        # could alternatively be done in passing.
+        ydx = np.gradient(_y, axis=0, edge_order=2)
+
+    # This will later be concatenated with a dynamic '0th' index
+    ind = [i for i in np.indices(_y.shape[1:])]
+
+    # Allocate the output array
+    original_dims = _y.shape
+    newdims = list(original_dims)
+    newdims[0] = len(_newx)
+    newy = np.zeros(newdims)
+
+    # set initial bounds
+    i_lower = np.zeros(_x.shape[1:], dtype=int)
+    i_upper = np.ones(_x.shape[1:], dtype=int)
+    x_lower = _x[0, ...]
+    x_upper = _x[1, ...]
+
+    for i, xi in enumerate(_newx):
+        # Start at the 'bottom' of the array and work upwards
+        # This only works if x and newx increase monotonically
+
+        # Update bounds where necessary and possible
+        needs_update = (xi > x_upper) & (i_upper+1<len(_x))
+        # print x_upper.max(), np.any(needs_update)
+        while np.any(needs_update):
+            i_lower = np.where(needs_update, i_lower+1, i_lower)
+            i_upper = i_lower + 1
+            x_lower = _x[[i_lower]+ind]
+            x_upper = _x[[i_upper]+ind]
+
+            # Check again
+            needs_update = (xi > x_upper) & (i_upper+1<len(_x))
+
+        # Express the position of xi relative to its neighbours
+        xj = (xi-x_lower)/(x_upper - x_lower)
+
+        # Determine where there is a valid interpolation range
+        within_bounds = (_x[0, ...] < xi) & (xi < _x[-1, ...])
+
+        if method == 'linear':
+            f0, f1 = _y[[i_lower]+ind], _y[[i_upper]+ind]
+            a = f1 - f0
+            b = f0
+
+            newy[i, ...] = np.where(within_bounds, a*xj+b, np.nan)
+
+        elif method=='cubic':
+            f0, f1 = _y[[i_lower]+ind], _y[[i_upper]+ind]
+            df0, df1 = ydx[[i_lower]+ind], ydx[[i_upper]+ind]
+
+            a = 2*f0 - 2*f1 + df0 + df1
+            b = -3*f0 + 3*f1 - 2*df0 - df1
+            c = df0
+            d = f0
+
+            newy[i, ...] = np.where(within_bounds, a*xj**3 + b*xj**2 + c*xj + d, np.nan)
+
+        else:
+            raise ValueError("invalid interpolation method"
+                             "(choose 'linear' or 'cubic')")
+
+    if inverse:
+        newy = newy[::-1, ...]
+
+    return np.moveaxis(newy, 0, axis)
+
 
 def make_colormap(seq):
     """Return a LinearSegmentedColormap
@@ -237,11 +379,14 @@ def findNiceContours(data,nlevs=None,rmClev=None,sym=None,verbose=None):
     verbose = if defined, print out some info to help debug
     """
     if nlevs is None: nlevs = 9
-    clevs = np.linspace(data.min(), data.max(), nlevs)
+
+    dsub = data[np.isfinite(data)] # ignore NaN
+    zmax = dsub.max()
+    zmin = dsub.min()
+    clevs = np.linspace(zmin, zmax, nlevs)
 #    if nozero is None: nozero=0
 #    if sym is None: sym=0
-    zmax = data.max()
-    zmin = data.min()
+
     if not verbose is None: print ("zmin, zmax", zmin, zmax)
     if zmax == zmin: 
         if (zmax != 0): 
@@ -500,5 +645,102 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
         t.set_visible(False)
     for t in axr.get_yticklabels():
         t.set_fontsize(labelFontSize)
+
+def hy2plev(T, P, pout,verbose=False):
+    """
+    hy2plev(T, P, pout)
+    interpolate a field from hybrid to pressure coordinates
+        assumes the input fields are xarray dataarrays
+        tested for EAM/CAM cubed sphere and lat/lon grids
+        
+           T the array on hybrid surfaces
+           P the pressures on hybrid surfaces 
+           pout the pressures to interpolate to (array or scalar)
+    """
+    #print("P",P)
+    pold = P.values
+    #print('pold',pold.shape)
+    if np.isscalar(pout):
+        ptmp = np.array([pout])
+    else:
+        ptmp = pout
+    #print('pout', pout, ptmp)
+    nznew = len(ptmp)
+   #print('ynew',ynew.shape)
+    clist = list(T.coords.keys())
+    #print('clist',clist,len(clist))
+    Tdims = T.dims
+    #print ('Tdims',Tdims)
+    Tshape = T.values.shape
+#    print('Tshape',Tshape)
+    dlist = list(T.dims)
+#    print('dlist',dlist,len(dlist))
+    ndlist = dlist
+    d2list = list()
+    olist = list()
+    d2size = 1
+    axs = 0
+    for index, item in enumerate(dlist):
+        if item == 'lev':
+            ndlist[index] = 'plev'
+            d2list.append(nznew)
+            axs = index
+            nzold = Tshape[index]
+            olist.append(nznew)
+            #d2size = d2size*nznew
+        else:
+            d2list.append(Tshape[index])
+            d2size = d2size*Tshape[index]
+            olist.append(1)
+        #print('xxx',index,ndlist[index],item,d2size)
+
+    #print('ndlist',ndlist)
+    #print('d2list',d2list,d2size)
+    #print('olist',olist)
+    #print('axs',axs)
+    #print('nzold',nzold)
+
+    #nz,ny,nx = P.shape
+    #print('nz,ny,nx',nz,ny,nx)
+
+    #pnew = np.repeat(ptmp,nx*ny).reshape((nznew,ny,nx))
+    #pnew = np.repeat(ptmp,d2size).reshape(d2list)
+    pnew = np.zeros(d2list) + pout.reshape(olist)
+    #print('pnewxxx',pnew.shape,pnew[0,:,0], pnew[1,:,1])
+    #Tvals = T.values
+    #for index in range(nzold):
+    #    print('pold(0),Tvals(0), pold(1), Tvales(1) ',index, pold[0,index,ind], Tvals[0,index,ind], pold[1,index,ind], Tvals[1,index,ind])    
+    #print('pnew',pnew)
+    #print('pnew2',pnew2.shape)
+    ynew = interp_along_axis(T.values, pold, pnew, axis=axs, inverse=False, method='linear',verbose=verbose)
+    #print('ynew',ynew)
+    #for index in range(nznew):
+    #    print('pnew(0),ynew(0), pnew(1), ynew(1) ',index, pnew[0,index,ind], ynew[0,index,ind], pnew[1,index,ind], ynew[1,index,ind])    
+  
+    cnew = dict(T.coords)
+    del cnew['lev'] # delete lev
+    #print('xxx',type(cnew))
+    #print('T coords', cnew)
+    #print('yyy')
+    #print('plev',cnew['plev'])
+    #print('Tlll', T.reset_coords('lev', drop=True))
+    dnew = T.dims
+    #print('T dims', dnew)
+    #print('zzz')
+    #print('T attrs', T.attrs)
+    NV = xr.DataArray(
+        ynew,
+        dims=ndlist,
+    )
+    #print('NV0',NV)
+    NV = NV.assign_coords(cnew)
+    #print('NV1',NV)
+    NV = NV.assign_coords({'plev': ptmp}) # add pcol as a new coordinate
+    #print('NV2',NV)
+    NV.attrs = T.attrs
+    #print('NV3',NV)
+    return NV
+        
 print ("pjr3.py complete")
 #help(findNiceContours)
+
