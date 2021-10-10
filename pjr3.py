@@ -660,11 +660,10 @@ def hy2plev(T, P, pout,verbose=False):
     #print("P",P)
     pold = P.values
     #print('pold',pold.shape)
-    if np.isscalar(pout):
-        ptmp = np.array([pout])
-    else:
-        ptmp = pout
-    #print('pout', pout, ptmp)
+    #print('aaa',np.isscalar(pout), np.ndim(pout) == 0 )
+    ptmp = np.asarray(pout)
+    if np.ndim(ptmp) == 0:
+        ptmp = np.array([ptmp])
     nznew = len(ptmp)
    #print('ynew',ynew.shape)
     clist = list(T.coords.keys())
@@ -705,7 +704,7 @@ def hy2plev(T, P, pout,verbose=False):
 
     #pnew = np.repeat(ptmp,nx*ny).reshape((nznew,ny,nx))
     #pnew = np.repeat(ptmp,d2size).reshape(d2list)
-    pnew = np.zeros(d2list) + pout.reshape(olist)
+    pnew = np.zeros(d2list) + ptmp.reshape(olist)
     #print('pnewxxx',pnew.shape,pnew[0,:,0], pnew[1,:,1])
     #Tvals = T.values
     #for index in range(nzold):
