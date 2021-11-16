@@ -10,6 +10,8 @@ import copy
 import cartopy.crs as ccrs
 import xarray as xr
 import os
+import sys
+import glob
 #import cdms2
 #import cdutil
 from scipy.interpolate import interp1d
@@ -739,6 +741,48 @@ def hy2plev(T, P, pout,verbose=False):
     NV.attrs = T.attrs
     #print('NV3',NV)
     return NV
+
+def interp_to_latlon(data2d,lat,lon,lat_i,lon_i):
+    """
+    # interpolating in lat/lon space has issues. interpolate in
+    # stereographic projection:
+    #
+    # input:
+    #    unstructured 1D data:  data(ncol),lat(ncol),lon(ncol)
+    #    target lat/lon grid:   lon_i(nlon), lat_i(nlat)
+    #
+    # output 2D interpolated data::
+    #   data(nlon,nlat)
+    #
+    """
+    # mesh grid
+    dproj=ccrs.PlateCarree()
+    nhalf = int(len(lat_i)/2)
+    lat_south = lat_i[ :nhalf]
+    lat_north = lat_i[ nhalf:]
+
+    # take source data in the correct hemisphere, include extra halo points for interpolation
+    # using the full global data sometimes confuses griddata with points being mapped close to infinity
+    halo = 15 # degrees
+    data2d_h=data2d[lat<halo]
+
+    lon_h=lon[lat<halo]
+    lat_h=lat[lat<halo]
+    xv,yv=numpy.meshgrid(lon_i,lat_south)
+    coords_in  = ccrs.SouthPolarStereo().transform_points(dproj,lon_h,lat_h)
+    coords_out = ccrs.SouthPolarStereo().transform_points(dproj,xv.flatten(),yv.flatten())
+    data_s = griddata(coords_in[:,0:2], data2d_h, coords_out[:,0:2], method='linear')
+
+    data2d_h=data2d[lat>-halo]
+    lon_h=lon[lat>-halo]
+    lat_h=lat[lat>-halo]
+    xv,yv=numpy.meshgrid(lon_i,lat_north)
+    coords_in  = ccrs.NorthPolarStereo().transform_points(dproj,lon_h,lat_h)
+    coords_out = ccrs.NorthPolarStereo().transform_points(dproj,xv.flatten(),yv.flatten())
+    data_n = griddata(coords_in[:,0:2], data2d_h, coords_out[:,0:2], method='linear')
+    
+    data_i=numpy.concatenate((data_s,data_n)).reshape(len(lat_i),len(lon_i))
+    return data_i
         
 print ("pjr3.py complete")
 #help(findNiceContours)
