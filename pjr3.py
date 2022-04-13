@@ -15,6 +15,7 @@ import glob
 #import cdms2
 #import cdutil
 from scipy.interpolate import interp1d
+from scipy.interpolate import griddata
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 #from metrics.packages.amwg.derivations import *
 #from metrics.packages.amwg.derivations import qflx_lhflx_conversions as flxconv
@@ -768,7 +769,7 @@ def interp_to_latlon(data2d,lat,lon,lat_i,lon_i):
 
     lon_h=lon[lat<halo]
     lat_h=lat[lat<halo]
-    xv,yv=numpy.meshgrid(lon_i,lat_south)
+    xv,yv=np.meshgrid(lon_i,lat_south)
     coords_in  = ccrs.SouthPolarStereo().transform_points(dproj,lon_h,lat_h)
     coords_out = ccrs.SouthPolarStereo().transform_points(dproj,xv.flatten(),yv.flatten())
     data_s = griddata(coords_in[:,0:2], data2d_h, coords_out[:,0:2], method='linear')
@@ -776,12 +777,12 @@ def interp_to_latlon(data2d,lat,lon,lat_i,lon_i):
     data2d_h=data2d[lat>-halo]
     lon_h=lon[lat>-halo]
     lat_h=lat[lat>-halo]
-    xv,yv=numpy.meshgrid(lon_i,lat_north)
+    xv,yv=np.meshgrid(lon_i,lat_north)
     coords_in  = ccrs.NorthPolarStereo().transform_points(dproj,lon_h,lat_h)
     coords_out = ccrs.NorthPolarStereo().transform_points(dproj,xv.flatten(),yv.flatten())
     data_n = griddata(coords_in[:,0:2], data2d_h, coords_out[:,0:2], method='linear')
     
-    data_i=numpy.concatenate((data_s,data_n)).reshape(len(lat_i),len(lon_i))
+    data_i=np.concatenate((data_s,data_n)).reshape(len(lat_i),len(lon_i))
     return data_i
         
 print ("pjr3.py complete")

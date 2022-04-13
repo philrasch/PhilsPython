@@ -1,21 +1,21 @@
 name: pjrpy3
 channels:
-  - conda-forge
   - defaults
 dependencies:
-  - nb_conda_kernels
-  - python=3.7
+  - python
   - dask
   - netcdf4
   - cartopy
   - xarray
   - matplotlib
-  - bottleneck
   - pynco
+  - bottleneck
   - jupyterlab
   - cdo
-  - statsmodels
   - xhistogram
+  - statsmodels
   - ncview
   - nodejs
+  - nb_conda_kernels
+  - cmocean
 prefix: /home/phil/miniconda3/envs/pjrpy3
