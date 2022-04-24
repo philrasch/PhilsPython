@@ -18,4 +18,6 @@ dependencies:
   - xhistogram
   - ncview
   - nodejs
+  - regionmask
+  - pygeos
 prefix: /home/phil/miniconda3/envs/pjrpy3
