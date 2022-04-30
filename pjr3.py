@@ -784,7 +784,68 @@ def interp_to_latlon(data2d,lat,lon,lat_i,lon_i):
     
     data_i=np.concatenate((data_s,data_n)).reshape(len(lat_i),len(lon_i))
     return data_i
-        
+
+
+def interp_ap(xt, yt, data2d,lat,lon):
+    """
+    # interpolating in lat/lon space has issues, so interpolate a set of arbitrary points in
+    # stereographic projection:
+    #
+    # input:
+    #    data2d(ncol),lat(ncol),lon(ncol): data and coords of unstructured mesh
+    #    xt, yt: lat and lon coordinates of locations to interpolate to
+    #
+    # output 
+    #    returns an array with same shape as xt with interpolated data
+    #
+    """
+    from scipy.interpolate import LinearNDInterpolator
+
+    # mesh grid
+    dproj=ccrs.PlateCarree()
+
+    # select interpolation points located in the nh and sh
+    inds = np.where(yt <= 0)
+    indn = np.where(yt > 0)
+
+    xtn = xt[indn]
+    ytn = yt[indn]
+    xts = xt[inds]
+    yts = yt[inds]
+
+    # take source data in the correct hemisphere, include extra halo points for interpolation
+    # using the full global data sometimes confuses interpolation with points being mapped close to infinity
+    halo = 15 # degrees
+    data2d_h=data2d[lat<halo]
+
+    lon_h=lon[lat<halo]
+    lat_h=lat[lat<halo]
+    coords_in  = ccrs.SouthPolarStereo().transform_points(dproj,lon_h,lat_h)
+
+    data_i = np.empty_like(xt,dtype=data2d_h.dtype)
+    data_i[:] = np.nan
+
+    data_s = []
+    if len(yts) > 0:
+        cto = ccrs.SouthPolarStereo().transform_points(dproj,xts,yts)
+        interp = LinearNDInterpolator(coords_in[:,0:2], data2d_h)
+        data_s = interp(cto[:,0],cto[:,1])
+        data_i[inds] = data_s
+
+    data2d_h=data2d[lat>-halo]
+    lon_h=lon[lat>-halo]
+    lat_h=lat[lat>-halo]
+    coords_in  = ccrs.NorthPolarStereo().transform_points(dproj,lon_h,lat_h)
+
+    data_n = []
+    if len(ytn) > 0:
+        cto = ccrs.NorthPolarStereo().transform_points(dproj,xtn,ytn)
+        interp = LinearNDInterpolator(coords_in[:,0:2], data2d_h)
+        data_n = interp(cto[:,0],cto[:,1])
+        data_i[indn] = data_n
+
+    return data_i
+
 print ("pjr3.py complete")
 #help(findNiceContours)
 
