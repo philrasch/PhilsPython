@@ -20,4 +20,5 @@ dependencies:
   - nodejs
   - regionmask
   - pygeos
+  - jupytext
 prefix: /home/phil/miniconda3/envs/pjrpy3
