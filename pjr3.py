@@ -786,21 +786,30 @@ def interp_to_latlon(data2d,lat,lon,lat_i,lon_i):
     return data_i
 
 
-def interp_ap(xt, yt, data2d,lat,lon):
+def interp_ap(xt, yt, data2d,lat,lon,method=None):
     """
-    # interpolating in lat/lon space has issues, so interpolate a set of arbitrary points in
-    # stereographic projection:
+    # interp an arbitrary set of points from data on an unstructured mesh
+    #
+    # interpolating in lat/lon space has issues with triangulation 
+    # at pole and wrapping at greenwich, so interpolate in stereographic projection:
     #
     # input:
-    #    data2d(ncol),lat(ncol),lon(ncol): data and coords of unstructured mesh
+    #    data2d(ncol),lat(ncol),lon(ncol): data and coords on unstructured mesh
     #    xt, yt: lat and lon coordinates of locations to interpolate to
+    #    method: optional, use cubic interpolation if method='cubic'
     #
     # output 
     #    returns an array with same shape as xt with interpolated data
     #
     """
+    # could also use scipy.interpolate.CloughTocher2DInterpolator for a cubic smooth interpolant
     from scipy.interpolate import LinearNDInterpolator
-
+    from scipy.interpolate import CloughTocher2DInterpolator
+    
+    intp2D = LinearNDInterpolator
+    if method == 'cubic':
+        intp2D = CloughTocher2DInterpolator
+    
     # mesh grid
     dproj=ccrs.PlateCarree()
 
@@ -822,13 +831,13 @@ def interp_ap(xt, yt, data2d,lat,lon):
     lat_h=lat[lat<halo]
     coords_in  = ccrs.SouthPolarStereo().transform_points(dproj,lon_h,lat_h)
 
-    data_i = np.empty_like(xt,dtype=data2d_h.dtype)
+    data_i = np.empty_like(xt,dtype=data2d.dtype)
     data_i[:] = np.nan
 
     data_s = []
     if len(yts) > 0:
         cto = ccrs.SouthPolarStereo().transform_points(dproj,xts,yts)
-        interp = LinearNDInterpolator(coords_in[:,0:2], data2d_h)
+        interp = intp2D(coords_in[:,0:2], data2d_h)
         data_s = interp(cto[:,0],cto[:,1])
         data_i[inds] = data_s
 
@@ -840,7 +849,7 @@ def interp_ap(xt, yt, data2d,lat,lon):
     data_n = []
     if len(ytn) > 0:
         cto = ccrs.NorthPolarStereo().transform_points(dproj,xtn,ytn)
-        interp = LinearNDInterpolator(coords_in[:,0:2], data2d_h)
+        interp = intp2D(coords_in[:,0:2], data2d_h)
         data_n = interp(cto[:,0],cto[:,1])
         data_i[indn] = data_n
 
