@@ -15,7 +15,6 @@ import glob
 #import cdms2
 #import cdutil
 from scipy.interpolate import interp1d
-from scipy.interpolate import griddata
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 #from metrics.packages.amwg.derivations import *
 #from metrics.packages.amwg.derivations import qflx_lhflx_conversions as flxconv
@@ -769,7 +768,7 @@ def interp_to_latlon(data2d,lat,lon,lat_i,lon_i):
 
     lon_h=lon[lat<halo]
     lat_h=lat[lat<halo]
-    xv,yv=np.meshgrid(lon_i,lat_south)
+    xv,yv=numpy.meshgrid(lon_i,lat_south)
     coords_in  = ccrs.SouthPolarStereo().transform_points(dproj,lon_h,lat_h)
     coords_out = ccrs.SouthPolarStereo().transform_points(dproj,xv.flatten(),yv.flatten())
     data_s = griddata(coords_in[:,0:2], data2d_h, coords_out[:,0:2], method='linear')
@@ -777,84 +776,14 @@ def interp_to_latlon(data2d,lat,lon,lat_i,lon_i):
     data2d_h=data2d[lat>-halo]
     lon_h=lon[lat>-halo]
     lat_h=lat[lat>-halo]
-    xv,yv=np.meshgrid(lon_i,lat_north)
+    xv,yv=numpy.meshgrid(lon_i,lat_north)
     coords_in  = ccrs.NorthPolarStereo().transform_points(dproj,lon_h,lat_h)
     coords_out = ccrs.NorthPolarStereo().transform_points(dproj,xv.flatten(),yv.flatten())
     data_n = griddata(coords_in[:,0:2], data2d_h, coords_out[:,0:2], method='linear')
     
-    data_i=np.concatenate((data_s,data_n)).reshape(len(lat_i),len(lon_i))
+    data_i=numpy.concatenate((data_s,data_n)).reshape(len(lat_i),len(lon_i))
     return data_i
-
-
-def interp_ap(xt, yt, data2d,lat,lon,method=None):
-    """
-    # interp an arbitrary set of points from data on an unstructured mesh
-    #
-    # interpolating in lat/lon space has issues with triangulation 
-    # at pole and wrapping at greenwich, so interpolate in stereographic projection:
-    #
-    # input:
-    #    data2d(ncol),lat(ncol),lon(ncol): data and coords on unstructured mesh
-    #    xt, yt: lat and lon coordinates of locations to interpolate to
-    #    method: optional, use cubic interpolation if method='cubic'
-    #
-    # output 
-    #    returns an array with same shape as xt with interpolated data
-    #
-    """
-    # could also use scipy.interpolate.CloughTocher2DInterpolator for a cubic smooth interpolant
-    from scipy.interpolate import LinearNDInterpolator
-    from scipy.interpolate import CloughTocher2DInterpolator
-    
-    intp2D = LinearNDInterpolator
-    if method == 'cubic':
-        intp2D = CloughTocher2DInterpolator
-    
-    # mesh grid
-    dproj=ccrs.PlateCarree()
-
-    # select interpolation points located in the nh and sh
-    inds = np.where(yt <= 0)
-    indn = np.where(yt > 0)
-
-    xtn = xt[indn]
-    ytn = yt[indn]
-    xts = xt[inds]
-    yts = yt[inds]
-
-    # take source data in the correct hemisphere, include extra halo points for interpolation
-    # using the full global data sometimes confuses interpolation with points being mapped close to infinity
-    halo = 15 # degrees
-    data2d_h=data2d[lat<halo]
-
-    lon_h=lon[lat<halo]
-    lat_h=lat[lat<halo]
-    coords_in  = ccrs.SouthPolarStereo().transform_points(dproj,lon_h,lat_h)
-
-    data_i = np.empty_like(xt,dtype=data2d.dtype)
-    data_i[:] = np.nan
-
-    data_s = []
-    if len(yts) > 0:
-        cto = ccrs.SouthPolarStereo().transform_points(dproj,xts,yts)
-        interp = intp2D(coords_in[:,0:2], data2d_h)
-        data_s = interp(cto[:,0],cto[:,1])
-        data_i[inds] = data_s
-
-    data2d_h=data2d[lat>-halo]
-    lon_h=lon[lat>-halo]
-    lat_h=lat[lat>-halo]
-    coords_in  = ccrs.NorthPolarStereo().transform_points(dproj,lon_h,lat_h)
-
-    data_n = []
-    if len(ytn) > 0:
-        cto = ccrs.NorthPolarStereo().transform_points(dproj,xtn,ytn)
-        interp = intp2D(coords_in[:,0:2], data2d_h)
-        data_n = interp(cto[:,0],cto[:,1])
-        data_i[indn] = data_n
-
-    return data_i
-
+        
 print ("pjr3.py complete")
 #help(findNiceContours)
 
