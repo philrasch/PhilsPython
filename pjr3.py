@@ -788,13 +788,15 @@ def interp_to_latlon(data2d,lat,lon,lat_i,lon_i):
 
 def interp_ap(xt, yt, data2d,lat,lon,method=None):
     """
-    # interp an arbitrary set of points from data on an unstructured mesh
+    # interp an arbitrary set of points at xt, yt 
+    # from data on an unstructured mesh at lat, lon
     #
     # interpolating in lat/lon space has issues with triangulation 
     # at pole and wrapping at greenwich, so interpolate in stereographic projection:
     #
     # input:
-    #    data2d(ncol),lat(ncol),lon(ncol): data and coords on unstructured mesh
+    #    data2d(ncol,...),lat(ncol),lon(ncol): data and coords on unstructured mesh
+    #    data2d can be multidimensional array, but ncol must be first coordinate
     #    xt, yt: lat and lon coordinates of locations to interpolate to
     #    method: optional, use cubic interpolation if method='cubic'
     #
@@ -802,13 +804,19 @@ def interp_ap(xt, yt, data2d,lat,lon,method=None):
     #    returns an array with same shape as xt with interpolated data
     #
     """
-    # could also use scipy.interpolate.CloughTocher2DInterpolator for a cubic smooth interpolant
     from scipy.interpolate import LinearNDInterpolator
     from scipy.interpolate import CloughTocher2DInterpolator
     
     intp2D = LinearNDInterpolator
     if method == 'cubic':
         intp2D = CloughTocher2DInterpolator
+
+    ld = data2d.shape[0] # length of first coord of input data
+    lx = lon.shape[0]
+    ly = lat.shape[0]
+    if ((ld != lx) | (ld != ly)):
+        print('inconsistent data2d, lon, lat arrays', ld, lx, ly)
+        sys.exit(1)
     
     # mesh grid
     dproj=ccrs.PlateCarree()
@@ -831,8 +839,15 @@ def interp_ap(xt, yt, data2d,lat,lon,method=None):
     lat_h=lat[lat<halo]
     coords_in  = ccrs.SouthPolarStereo().transform_points(dproj,lon_h,lat_h)
 
-    data_i = np.empty_like(xt,dtype=data2d.dtype)
+    #data_i = np.empty_like(xt,dtype=data2d.dtype)
+    #data_i[:] = np.nan
+    dims = list(xt.shape)+list(data2d[0,...].shape)
+    #print('dims',dims)
+    #data_i = np.empty_like(xt,dtype=data2d.dtype)
+    data_i = np.zeros(dims,dtype=data2d.dtype)
     data_i[:] = np.nan
+    #print ('bbb',data_i.shape)
+
 
     data_s = []
     if len(yts) > 0:
