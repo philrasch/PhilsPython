@@ -816,7 +816,7 @@ def interp_ap(xt, yt, data2d,lat,lon,method=None):
     ly = lat.shape[0]
     if ((ld != lx) | (ld != ly)):
         print('inconsistent data2d, lon, lat arrays', ld, lx, ly)
-        sys.exit(1)
+        raise TypeError("inconsistent input in interp_ap")
     
     # mesh grid
     dproj=ccrs.PlateCarree()
