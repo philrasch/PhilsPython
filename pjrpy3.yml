@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
   - nb_conda_kernels
-  - python=3.7
+  - python=3.9
   - dask
   - netcdf4
   - cartopy
