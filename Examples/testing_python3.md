@@ -7,9 +7,9 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.13.8
   kernelspec:
-    display_name: Python [conda env:pjrpy3] *
+    display_name: pjrpy3
     language: python
-    name: conda-env-pjrpy3-py
+    name: pjrpy3
 ---
 
 ```python
@@ -17,6 +17,8 @@ import sys
 print(sys.version)
 %matplotlib inline
 %run -i ~/Python/pjr3
+from jupytext.config import find_jupytext_configuration_file
+print('jupytext config file is ',find_jupytext_configuration_file('.'))
 ```
 
 ```python
@@ -50,10 +52,11 @@ import platform
 host = platform.node()
 print(host)
 filename = os.path.expanduser('~/my_folder/output.txt')
-if ('corix' in host):
+if ('cori' in host):
     indir = '/global/cscratch1/sd/ogaruba/acme_scratch/cori-haswell/archive/E1850C5CLM45CNMC.ne30_oECv3_3/atm/hist/E1850C5CLM45CNMC.ne30_oECv3_3.cam.h0.*-06.nc'
     indir = '/global/cscratch1/sd/ogaruba/acme_scratch/cori-haswell/archive/E1850C5CLM45CNMC.ne30_oECv3_3/atm/hist/E1850C5CLM45CNMC.ne30_oECv3_3.cam.h0.*.nc'
     indir = '/global/cscratch1/sd/ogaruba/acme_scratch/cori-haswell/archive/E1850C5CLM45CNMC.ne30_oECv3_3/atm/hist/E1850C5CLM45CNMC.ne30_oECv3_3.cam.h0.0049-06.nc'
+    indir = os.path.expanduser('~/NetCDF_Files/vd05_ANN_climo.nc')
 else:
     indir = os.path.expanduser('~/NetCDF_Files/vd05_JJA_climo.nc')
     #indir = os.path.expanduser('~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
@@ -165,7 +168,7 @@ Tout = hy2plev(Tin, Pin, pout)
 from cartopy import crs
 
 indir = os.path.expanduser('/lustre/choi040/20210920.F2010.1Nudg.ne30pg2_r05_oECv3/run/20210920.F2010.1Nudg.ne30pg2_r05_oECv3.eam.h0.2015-01.nc')
-indir = os.path.expanduser('/home/phil/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
+indir = os.path.expanduser('~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
 
 DS = xr.open_mfdataset(indir).chunk({'time': 20})
 Tout = DS.PS.isel(time=0)
