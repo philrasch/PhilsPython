@@ -870,6 +870,123 @@ def interp_ap(xt, yt, data2d,lat,lon,method=None):
 
     return data_i
 
+def gcd(lon1, lat1, lon2, lat2):
+    """calculate great circle distance in km
+       given input longitude and latitudes in degrees
+    """
+    d2r = 57.296
+    lonr1 = lon1/d2r
+    latr1 = lat1/d2r
+    lonr2 = lon2/d2r
+    latr2 = lat2/d2r
+
+    d = 6371.*(np.arccos(np.sin(latr1) * np.sin(latr2) + np.cos(latr1) * np.cos(latr2) * np.cos(lonr1 - lonr2)))
+    return d
+
+def great_circle(lon1, lat1, lon2, lat2,n=None):
+    """see http://www.edwilliams.org/avform147.htm#Intermediate"""
+    from math import radians, degrees, sin, cos, asin, acos, sqrt, atan2
+
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    #print('xxx',lon1,lat1,lon2,lat2)
+    d = (acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon1 - lon2)))
+    #print('d',d)
+    f = 0.5
+    if n == None:
+        f = np.array(np.linspace(0.,1.,3))
+
+    else:
+        f = np.array(np.linspace(0.,1.,n))
+        
+    #print ('f',f.dtype,f.shape)
+    a = np.sin((1-f)*d)/np.sin(d)
+    b = np.sin(f*d)/np.sin(d)
+    clat1 = np.cos(lat1)
+    clon1 = np.cos(lon1)
+    clat2 = np.cos(lat2)
+    clon2 = np.cos(lon2)
+    slon1 = np.sin(lon1)
+    slon2 = np.sin(lon2)
+    slat1 = np.sin(lat1)
+    slat2 = np.sin(lat2)
+    x = a*clat1*clon1 + b*clat2*clon2
+    y = a*clat1*slon1 + b*clat2*slon2
+    z = a*slat1       + b*slat2
+    lat = np.arctan2(z,np.sqrt(x**2+y**2))
+    lon = np.arctan2(y,x)
+    lon,lat = np.degrees([lon,lat])
+
+    rad = 6371. 
+    return lon,lat
+
+def xr_getvar(Varname, DS, regtag=None):
+    """get variable Varname from xarray dataset DS
+       some variables are derived from others
+       some are modified to more traditional units
+       some are returned directly from DS
+       
+       regtag is an optional "region tag" that is added to dimension names on EAM and CAM regional history file
+    """
+    if regtag == None:
+        regtag = ""
+        
+    try:    # return derived variables, or modified variables, or variables on DS
+        if Varname == "CLDLIQ":
+            Var = DS['CLDLIQ'+regtag]
+            Var = Var*1.e3
+            Var.attrs['units'] = 'g/kg'
+        elif Varname == "ICWMR":
+            Var = DS['ICWMR'+regtag]
+            Var = Var*1.e3
+            Var.attrs['units'] = 'g/kg'
+        elif Varname == "ICWNC":
+            Var = DS['ICWNC'+regtag]
+            Var = Var*1.e-6
+            Var.attrs['units'] = '/cm3'
+        elif Varname == "P3": 
+            # special treatment for constructing a 3D pressure from PS and
+            # hybrid coefs
+            Var = (DS.hyam*DS.P0 + DS.hybm*DS['PS'+regtag])/100.
+            Var.attrs["units"] = 'hPa'
+            Var.attrs["long_name"] = 'Pressure'
+            # make sure the returned quantities have the same coordinate order as standard
+            ldims = list(DS['T'+regtag].dims)
+            Var = Var.transpose(*ldims)
+            #print('newPin.dims', Pin.dims)
+            #print('newPin.shape', Pin.shape)
+        elif Varname == "PRECC":
+            Var = DS['PRECC'+regtag]
+            Var = Var*8.64e7
+            Var.attrs['units'] = 'mm/day'
+        elif Varname == "PRECT":
+            Var = DS['PRECT'+regtag]
+            Var = Var*8.64e7
+            Var.attrs['units'] = 'mm/day'
+        elif Varname == 'PS':
+            Var = DS['PS'+regtag]
+            Var = Var/100.
+            Var.attrs['units'] = 'hPa'
+        elif Varname == 'PCONVT':
+            Var = DS['PCONVT'+regtag]
+            Var = Var/100.
+            Var.attrs['units'] = 'hPa'
+        elif Varname == 'ZCONVT':
+            Var = DS['PCONVT'+regtag]
+            Var = Var/100.
+            Var.attrs['basename'] = Varname
+            Var.attrs['units'] = 'm'
+            Var = -8.1e3*np.log(Var/1012.)  # rough conversion to m using 8km scale height
+            Var.attrs['long_name'] = 'convection top height'
+            Var = Var.rename(Varname)
+        else:  # look in Xarray dataset DS
+            Var = DS[Varname+regtag]
+    except KeyError:  # variable not a derived field or on DS
+        estr = Varname+regtag+' is not defined or found in DS'
+        raise UserWarning(estr)
+    else:    
+        return Var
+    
+
 print ("pjr3.py complete")
 #help(findNiceContours)
 
