@@ -28,6 +28,7 @@ print('xc,yc',xc,yc)
 ```python
 # process file holding data only over a region at every timestep of a model run
 indir = '/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_e1/tests/M_1x2_ndays/run/v2.LR.histAMIP_e1.eam.h1.2015-07-*.nc'
+indir = '/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_x3/tests/M_1x2_ndays/run/v2.LR.histAMIP_x3.eam.h1.2015-07-*.nc'
 regtag = '_190e_to_250e_0n_to_35n'
 xr.set_options(keep_attrs=True)
 DS0 = xr.open_mfdataset(indir)
@@ -114,7 +115,8 @@ print('ind',ind,lat[ind],lon[ind])
 ```
 
 ```python
-
+import datetime
+import pandas as pd
 
 Tin = xr_getvar('CLDLIQ',DS,regtag=regtag)
 PS = xr_getvar('PS',DS,regtag=regtag)
@@ -153,18 +155,68 @@ print('PRECc, PREct', PRECC.isel(ncol_190e_to_250e_0n_to_35n=ind,time=tind).valu
       PRECT.isel(ncol_190e_to_250e_0n_to_35n=ind,time=tind).values)
 PRECT.isel(ncol_190e_to_250e_0n_to_35n=ind).plot()
 PRECC.isel(ncol_190e_to_250e_0n_to_35n=ind).plot()
+print('bbb',PRECC.isel(ncol_190e_to_250e_0n_to_35n=ind).values)
 plt.show()
 PCONVTc.plot()
 plt.show()
 
+```
+
+```python
+Varlist = ["ICWNC","ICWMR","CLOUDFRAC_CLUBB","PS","CAPE","T","CLOUD","CONCLD","ZCONVT"]
+#Varlist = ["ICWNC"]
+for Vname in Varlist:
+    Var = xr_getvar(Vname,DS,regtag=regtag)
+    Varc = Var.isel(ncol_190e_to_250e_0n_to_35n=ind)
+    print(Vname+' range', Varc.min().values, Varc.max().values)
+    hours = (V2.indexes['time']-V2.indexes['time'][0])/datetime.timedelta(hours=1)
+    V2 = Varc.assign_coords(hours=("time", hours))
+    V2['hours'].attrs['units'] = 'hours after '+Varc.time[0].dt.strftime("%B %d, %Y, %H:%M:%S").values
+    if 'lev' in Varc.dims:
+        V2.plot(x='hours',yincrease=False)
+    else:
+        V2.plot(x='hours')
+    #Varc.plot()
+    plt.show()
+```
+
+```python
+# change units of time
+# inspired by
+# https://stackoverflow.com/questions/54653536/xarray-datetime64ns-remove-or-normalise-time-from-datetime
+import datetime
+V2 = Varc.copy()
+V2['time'] = (V2.indexes['time']-V2.indexes['time'][0])/datetime.timedelta(hours=1)
+V2['time'].attrs['units'] = 'hours'
+V2.plot()
+print('V2[\'time\']',V2['time'][0])
+print('Varc[\'time\']',Varc['time'][0])
+```
+
+```python
+# change units of time
+# inspired by
+# https://docs.xarray.dev/en/stable/user-guide/plotting.html
+import datetime
+import pandas as pd
+hours = (Varc.time - Varc.time[0]) / pd.Timedelta(hours=1)
+V2 = Varc.assign_coords(hours=("time", hours.data))
+print(Varc.time[0].dt.strftime("%B %d, %Y, %H:%M:%S").values)
+V2['hours'].attrs['units'] = 'hours after '+Varc.time[0].dt.strftime("%B %d, %Y, %H:%M:%S").values
+V2.plot(x='hours')
+
+```
+
+```python
 Varlist = ["ICWNC","ICWMR","CLOUDFRAC_CLUBB","PS","CAPE","T","CLOUD","CONCLD","ZCONVT"]
 #Varlist = ["ZMDLF"]
 for Vname in Varlist:
     Var = xr_getvar(Vname,DS,regtag=regtag)
     Varc = Var.isel(ncol_190e_to_250e_0n_to_35n=ind)
+    print('xxx',Varc.time)
     print(Vname+' range', Varc.min().values, Varc.max().values)
-    Varc.plot()
-    plt.show()
+    hours = (Varc.time - Varc.time[0]) / pd.Timedelta(hours=1)
+
 ```
 
 ```python
