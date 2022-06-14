@@ -191,19 +191,26 @@ dataproj=ccrs.PlateCarree()    # data is always assumed to be lat/lon
 plotproj=ccrs.Mollweide(central_longitude=200)   # any projections should work 
 clat = (latsub.values.min()+latsub.values.max())/2.
 clon = (lonsub.values.min()+lonsub.values.max())/2.
-plotproj=ccrs.NearsidePerspective(central_longitude=clon, central_latitude=clat)
+#plotproj=ccrs.NearsidePerspective(central_longitude=clon, central_latitude=clat)
+plotproj=ccrs.Mercator()
 ax = plt.axes(projection=plotproj)
-ax.set_global()
+ax.set_extent([lonsub.values.min(), 260., latsub.values.min(), latsub.values.max()])
+#ax.set_global()
 ax.coastlines(linewidth=0.2)
 clevs = findNiceContours(np.array([zmin,zmax]),nlevs=10)
 pl = ax.contourf(xv, yv, data_regridded, clevs, vmin=zmin, vmax=zmax,  extend='both', transform=ccrs.PlateCarree())
 # Add colorbar to plot
 cb = plt.colorbar(
     pl, orientation='horizontal',ticks=clevs,
-    label='%s (%s)'%(data2d.long_name, data2d.units), pad=0.05
+    label='%s (%s)'%(data2d.long_name, data2d.units), pad=0.1
 )
-plt.plot(xc,yc,marker='*',color='red',transform=ccrs.PlateCarree())
+cb.ax.tick_params(labelsize=8)
 
+
+plt.plot(xc,yc,marker='*',color='red',transform=ccrs.PlateCarree())
+gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=2, color='gray', alpha=0.5)
+plt.savefig("transect.pdf")
 plt.show
 ```
 
