@@ -336,7 +336,7 @@ gravity = 9.80665 # std gravity
 pi = np.pi  # pi to 
 arad = 6.37e6 # radius of earth in meters
 
-        
+
 def onedplot(lat1, data1, lat2, data2):
     """Make 2 lines and the difference plot between the lines."""
     plt.rc('lines', linewidth=4)
@@ -372,7 +372,7 @@ def onedplot(lat1, data1, lat2, data2):
         print ("regrid data1.size", np.size(y1))
     dy = np.array(y2-y1);
     ax1.plot(xh, dy);
-        
+
 def findNiceContours(data,nlevs=None,rmClev=None,sym=None,verbose=None):
     """Find Nice Contours
     data = 2d numpy array (or data structure base on numpy) ordered (latitude, pressure)
@@ -985,7 +985,45 @@ def xr_getvar(Varname, DS, regtag=None):
         raise UserWarning(estr)
     else:    
         return Var
-    
+
+def xr_cshplot(xrVar, xrLon, xrLat):
+    """xr_cshplot xarray cubed sphere horizontal plot
+    """
+
+    dinc = 1.  # increment of mesh in degrees
+    lon_h=np.arange(np.floor(lon.values.min()),np.ceil(lon.values.max()+dinc), dinc)
+    lat_h=np.arange(np.floor(lat.values.min()),np.ceil(lat.values.max()+dinc), dinc)
+    xv,yv=np.meshgrid(lon_h,lat_h)
+    data_regridded = interp_ap(xv, yv, xrVar.values,lat.values,lon.values)
+    df = data_regridded.flatten()
+    dsub = df[np.isfinite(df)] # ignore NaN
+    zmax = dsub.max()
+    zmin = dsub.min()
+
+    dataproj=ccrs.PlateCarree()    # data is always assumed to be lat/lon
+    #plotproj=ccrs.Orthographic(central_latitude=0,central_longitude=55)   # any projections should work 
+    plotproj=ccrs.Mollweide(central_longitude=200)   # any projections should work 
+    clat = (lat.values.min()+lat.values.max())/2.
+    clon = (lon.values.min()+lon.values.max())/2.
+    #plotproj=ccrs.NearsidePerspective(central_longitude=clon, central_latitude=clat)
+    plotproj=ccrs.Mercator()
+    ax = plt.axes(projection=plotproj)
+    ax.set_extent([lon.values.min(), 260., lat.values.min(), lat.values.max()])
+    #ax.set_global()
+    clevs = findNiceContours(np.array([zmin,zmax]),nlevs=10)
+    pl = ax.contourf(xv, yv, data_regridded, clevs, vmin=zmin, vmax=zmax,  extend='both', transform=ccrs.PlateCarree())
+    # Add colorbar to plot
+    cb = plt.colorbar(
+        pl, orientation='horizontal',ticks=clevs,
+        label='%s (%s)'%(xrVar.long_name, xrVar.units), pad=0.1
+    )
+    cb.ax.tick_params(labelsize=8)
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                      linewidth=2, color='gray', alpha=0.5)
+    ax.coastlines(linewidth=1,color='blue')
+
+# #  plt.savefig("transect.pdf")
+# #   plt.show
 
 print ("pjr3.py complete")
 #help(findNiceContours)
