@@ -238,3 +238,7 @@ data_regridded = interp_ap(xim, yim, data2d.values,lat.values,lon.values,method=
 err = (data_regridded - truth)[((yim > -45) & (yim < 45))]
 print('crude RMS and 1 norm', np.sqrt((err**2).mean()),err.min(),err.max())
 ```
+
+```python
+
+```

@@ -169,7 +169,7 @@ for Vname in Varlist:
     Var = xr_getvar(Vname,DS,regtag=regtag)
     Varc = Var.isel(ncol_190e_to_250e_0n_to_35n=ind)
     print(Vname+' range', Varc.min().values, Varc.max().values)
-    hours = (V2.indexes['time']-V2.indexes['time'][0])/datetime.timedelta(hours=1)
+    hours = (Varc.indexes['time']-Varc.indexes['time'][0])/datetime.timedelta(hours=1)
     V2 = Varc.assign_coords(hours=("time", hours))
     V2['hours'].attrs['units'] = 'hours after '+Varc.time[0].dt.strftime("%B %d, %Y, %H:%M:%S").values
     if 'lev' in Varc.dims:
@@ -204,18 +204,6 @@ V2 = Varc.assign_coords(hours=("time", hours.data))
 print(Varc.time[0].dt.strftime("%B %d, %Y, %H:%M:%S").values)
 V2['hours'].attrs['units'] = 'hours after '+Varc.time[0].dt.strftime("%B %d, %Y, %H:%M:%S").values
 V2.plot(x='hours')
-
-```
-
-```python
-Varlist = ["ICWNC","ICWMR","CLOUDFRAC_CLUBB","PS","CAPE","T","CLOUD","CONCLD","ZCONVT"]
-#Varlist = ["ZMDLF"]
-for Vname in Varlist:
-    Var = xr_getvar(Vname,DS,regtag=regtag)
-    Varc = Var.isel(ncol_190e_to_250e_0n_to_35n=ind)
-    print('xxx',Varc.time)
-    print(Vname+' range', Varc.min().values, Varc.max().values)
-    hours = (Varc.time - Varc.time[0]) / pd.Timedelta(hours=1)
 
 ```
 
