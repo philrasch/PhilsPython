@@ -21,4 +21,5 @@ dependencies:
   - regionmask
   - pygeos
   - jupytext
+  - nc-time-axis
 prefix: /home/phil/miniconda3/envs/pjrpy3
