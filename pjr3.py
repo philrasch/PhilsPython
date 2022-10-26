@@ -327,8 +327,8 @@ def diverge_map(high=(1., 0., 0.), low=(0.0, 0., 1.)):
     or rgb color tuples
     '''
     c = mcolors.ColorConverter().to_rgb
-    if isinstance(low, basestring): low = c(low)
-    if isinstance(high, basestring): high = c(high)
+    if isinstance(low, str): low = c(low)
+    if isinstance(high, str): high = c(high)
     return make_colormap([low, c('white'), 0.5, c('white'), high])
 
 # frequently used constants
@@ -455,6 +455,7 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
       'colorbar': location of colorbar ('bot','top','left','right','None')
       'rmClev': contour level to delete; frequently Zero, see findNiceContours
       'title': a title for the plot
+      'ltitle': left title
       'ybot': if present, the pressure at the plot bottom
       'ytop': if present, the pressure at the top
     modelLevels:  If present a small side panel will be drawn with lines for each model level
@@ -514,10 +515,10 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
     # add a title
     if hasattr(data,'long_name'):
         deftitle = data.long_name
-#        print "deftitle set to longname", deftitle
+        #print ("deftitle set to longname", deftitle)
         #    variance.units = '(%s)^2'%var.units
     else:
-#        print "no long_name attribute"
+        #print ("no long_name attribute")
         deftitle = ''
     ltitle = plotOpt.get('ltitle',deftitle)
     ax1.set_title(ltitle,loc='left')
@@ -546,14 +547,32 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
     units = plotOpt.get('units',defunits)
     # add colorbar
     # Note: use of the ticks keyword forces colorbar to draw all labels
-    colorbar = plotOpt.get('colorbar', 'bot')
+    colorbar = plotOpt.get('colorbar', 'bot_works')
     fmt = mpl.ticker.FormatStrFormatter("%g")
-    if colorbar == 'bot':
+    # next block works, but I am disabling it so I can reserve space for a colorbar even when unused
+    if colorbar == 'bot_works':
         cbar = fig.colorbar(contour, ax=ax1, orientation='horizontal', shrink=1.05, pad=0.2,
                             ticks=clevs, format=fmt)
         cbar.set_label(units)
         for t in cbar.ax.get_xticklabels():
             t.set_fontsize(labelFontSize)
+    if (colorbar == 'bot' or colorbar == 'botnd'):
+        ax_cb3 = divider.new_vertical(size=0.2, pad=0.6,pack_start=True) # steal colorbar space from end
+        fig.add_axes(ax_cb3)
+        if colorbar == 'bot':
+            cbar = fig.colorbar(contour, cax=ax_cb3, ticks=clevs, orientation="horizontal")
+            for t in cbar.ax.get_xticklabels():
+                t.set_fontsize(labelFontSize)
+            #cbar.set_label(units)
+            #print('title and units',deftitle, units)
+            # title is above colorbar
+            cbar.ax.set_title(units,pad=5)
+            #fs = cbar.ax.get_title()
+            #print('fs is ', fs)
+            # label is below colorbar
+            #cbar.set_label('colorbar label K',fontsize=20)
+        else:
+            plt.axis('off')
     if (colorbar == 'right' or colorbar == 'rightnd'):
         ax_cb2 = divider.new_horizontal(size="10%", pad=0.3) # steal colorbar space from end
         fig.add_axes(ax_cb2)
@@ -578,7 +597,7 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
     # according to model levels on the right y axis
     ax1.set_ylabel("Pressure [hPa]")
     ax1.set_yscale('log')
-    ax1.yaxis.set_label_coords(-0.15, 0.5)
+    ax1.yaxis.set_label_coords(-0.10, 0.5)
 #    print "y", y
     xmesh,ymesh = np.meshgrid(x, y)
 #    print "ymesh range", ymesh.min(), ymesh.max()
@@ -629,7 +648,7 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
         label_xcoor = 4.7
     else:
         axr = ax_z
-        label_xcoor = 7.
+        label_xcoor = 4.
     axr.set_ylabel("Altitude [km]")
     axr.yaxis.set_label_coords(label_xcoor, 0.5)
 #    axr.yaxis.labelpad = 42.
@@ -935,10 +954,25 @@ def xr_getvar(Varname, DS, regtag=None):
             Var = DS['CLDLIQ'+regtag]
             Var = Var*1.e3
             Var.attrs['units'] = 'g/kg'
+            Var.attrs["long_name"] = 'grid-avg liq. Mix. Rat.'
+        elif Varname == "CLDICE":
+            Var = DS['CLDICE'+regtag]
+            Var = Var*1.e6
+            Var.attrs['units'] = 'mg/kg'
+            Var.attrs["long_name"] = 'grid-avg liq. Mix. Rat.'
+        elif Varname == "CLOUD":
+            Var = DS['CLOUD'+regtag]
+            Var = Var*1.e2
+            Var.attrs['units'] = '%'
+        elif Varname == "Q":
+            Var = DS['Q'+regtag]
+            Var = Var*1.e3
+            Var.attrs['units'] = 'g/kg'
         elif Varname == "ICWMR":
             Var = DS['ICWMR'+regtag]
             Var = Var*1.e3
             Var.attrs['units'] = 'g/kg'
+            Var.attrs["long_name"] = 'in-cloud liq. Mix. Rat.'
         elif Varname == "ICWNC":
             Var = DS['ICWNC'+regtag]
             Var = Var*1.e-6
@@ -961,7 +995,19 @@ def xr_getvar(Varname, DS, regtag=None):
         elif Varname == "PRECT":
             Var = DS['PRECT'+regtag]
             Var = Var*8.64e7
+            Var.attrs['long_name'] = 'Total(liq,ice,conv,strat) Precipitation'
             Var.attrs['units'] = 'mm/day'
+        elif Varname == "PRECS":
+            Var = DS['PRECT'+regtag]-DS['PRECC'+regtag]
+            Var = Var*8.64e7
+            Var.attrs['basename'] = Varname
+            Var.attrs['long_name'] = 'Stratiform Precipitation'
+            Var.attrs['units'] = 'mm/day'
+        elif Varname == "RESTOM":
+            Var = DS['FSNT'+regtag]-DS['FLNT'+regtag]
+            Var.attrs['basename'] = Varname
+            Var.attrs['long_name'] = 'Residual TOA flux'
+            Var.attrs['units'] = 'W/m2'
         elif Varname == 'PS':
             Var = DS['PS'+regtag]
             Var = Var/100.
@@ -1022,8 +1068,10 @@ def xr_cshplot(xrVar, xrLon, xrLat):
                       linewidth=2, color='gray', alpha=0.5)
     ax.coastlines(linewidth=1,color='blue')
 
-# #  plt.savefig("transect.pdf")
-# #   plt.show
+# +
+#  plt.savefig("transect.pdf")
+#   plt.show
+# -
 
 print ("pjr3.py complete")
 #help(findNiceContours)
