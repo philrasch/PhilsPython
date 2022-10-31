@@ -31,6 +31,8 @@ import warnings
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
+xr.set_options(keep_attrs=True)
+
 # original code from 
 # https://stackoverflow.com/questions/28934767/best-way-to-interpolate-a-numpy-ndarray-along-an-axis
 def interp_along_axis(y, x, newx, axis, inverse=False, method='linear', verbose=False):
@@ -1024,6 +1026,15 @@ def xr_getvar(Varname, DS, regtag=None):
             Var = -8.1e3*np.log(Var/1012.)  # rough conversion to m using 8km scale height
             Var.attrs['long_name'] = 'convection top height'
             Var = Var.rename(Varname)
+        elif Varname == "TGCLDLWP":
+            Var = DS['TGCLDLWP'+regtag]
+            Var = Var*1.e3
+            Var.attrs['units'] = 'g/kg'
+            Var.attrs["long_name"] = 'grid-avg LWP.'
+        elif Varname == "AODVIS":
+            Var = DS[Varname+regtag]
+            Var.attrs['units'] = '1'
+            print('add units attribute')
         else:  # look in Xarray dataset DS
             Var = DS[Varname+regtag]
     except KeyError:  # variable not a derived field or on DS
@@ -1072,6 +1083,46 @@ def xr_cshplot(xrVar, xrLon, xrLat):
 #  plt.savefig("transect.pdf")
 #   plt.show
 # -
+
+def make_fvarea(lon,lat):
+    """make_fvarea(lon,lat)
+
+    make finite volume areas, given 1-D lon and lat arrays
+    """
+    pio180 = pi/180.
+    yw = np.zeros(len(lat)+1)
+    # walls in degrees
+    yw[1:-1] = (lat[1:] + lat[:-1]) / 2
+    yw[0] = lat[0]
+    yw[-1] = lat[-1]
+    # wall in sin(latitude in radians)
+    yw = np.sin(yw*pio180)
+    dy = np.diff(yw)
+    dx = float(lon[1]-lon[0])*pio180
+    dxa = np.full([len(lat),len(lon)],dx)
+    area = dxa*dy[:,np.newaxis]
+
+    return area
+
+def center_time(DS1):
+    """center_time(DS1)
+    
+    correct the time coordinate in DS1 to represent the center of the time bounds
+ 
+    """
+    # the time coord is registered at the end of the time averaging interval
+    # determine the midpoint of the interval and the length of the interval, 
+    time = DS1['time'].copy()
+    #print('time',time)
+    bndname = time.attrs['bounds']
+    time_bnds = DS1[bndname]
+    tb = time_bnds.values
+    tint = (tb[:,1]-tb[:,0])
+    tbm = tint/2. + tb[:,0]
+    DS1.coords["time"] = tbm
+    DS1['time'].attrs['long_name'] = 'time'
+    DS1['time'].attrs['bounds'] = 'time_bnds'
+    return DS1
 
 print ("pjr3.py complete")
 #help(findNiceContours)
