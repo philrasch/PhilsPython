@@ -1008,10 +1008,12 @@ def xr_getvar(Varname, DS, regtag=None):
             # hybrid coefs
             #VarI = (DS.hyai*DS.P0 + DS.hybi*DS['PS'+regtag])/100.
             VarI = (DS['PS'+regtag]*DS.hybi + DS.hyai*DS.P0)
+            required_dims = ('lon'+regtag, 'lat'+regtag, 'lev')
+            mylist = find_vars_bydims(DS1,required_dims)
             #print('VarI',VarI)
             #print('VarI col 0',VarI[0,0,:].values)
             #print('PS',DS['PS'+regtag])
-            Var = DS['T'+regtag].copy()
+            Var = DS[mylist[0]].copy()
             Var = Var.rename(Varname)
             #print('Var',Var)
             Varx = VarI.diff("ilev").values/9.8
@@ -1077,7 +1079,7 @@ def xr_getvar(Varname, DS, regtag=None):
         elif Varname == "AODVIS":
             Var = DS[Varname+regtag]
             Var.attrs['units'] = '1'
-            print('add units attribute')
+            #print('add units attribute')
         else:  # look in Xarray dataset DS
             Var = DS[Varname+regtag]
     except KeyError:  # variable not a derived field or on DS
@@ -1166,6 +1168,21 @@ def center_time(DS1):
     DS1['time'].attrs['long_name'] = 'time'
     DS1['time'].attrs['bounds'] = 'time_bnds'
     return DS1
+
+def find_vars_bydims(DS1,required_dims):
+    """ 
+    function to return a list of variables found in DataSet DS1 that contain 
+    a set of required dimensions listed in the tuple required_dims
+    routine will exit with an error if DS1 doesn't have any 3D+ variables
+    """
+    DS1s = DS1[[
+        k for k, v in DS1.data_vars.items()
+        if set(required_dims).issubset(v.dims)
+    ]]
+
+    ll = list(DS1s.data_vars)
+
+    return ll
 
 print ("pjr3.py complete")
 #help(findNiceContours)
