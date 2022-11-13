@@ -987,8 +987,45 @@ def xr_getvar(Varname, DS, regtag=None):
             Var.attrs["units"] = 'hPa'
             Var.attrs["long_name"] = 'Pressure'
             # make sure the returned quantities have the same coordinate order as standard
-            ldims = list(DS['T'+regtag].dims)
-            Var = Var.transpose(*ldims)
+            #ldims = list(DS['T'+regtag].dims)
+            #Var = Var.transpose(*ldims)
+            #print('newPin.dims', Pin.dims)
+            #print('newPin.shape', Pin.shape)
+        elif Varname == "P3i": 
+            # special treatment for constructing a 3D pressure from PS and
+            # hybrid coefs
+            #Var = (DS.hyai*DS.P0 + DS.hybi*DS['PS'+regtag])/100.
+            Var = (DS['PS'+regtag]*DS.hybi + DS.hyai*DS.P0)/100.
+            Var.attrs["units"] = 'hPa'
+            Var.attrs["long_name"] = 'Pressure(interfaces)'
+            # make sure the returned quantities have the same coordinate order as standard
+            #ldims = list(DS['T'+regtag].dims)
+            #Var = Var.transpose(*ldims)
+            #print('newPin.dims', Pin.dims)
+            #print('newPin.shape', Pin.shape)
+        elif Varname == "DPOG": 
+            # special treatment for constructing a 3D pressure from PS and
+            # hybrid coefs
+            #VarI = (DS.hyai*DS.P0 + DS.hybi*DS['PS'+regtag])/100.
+            VarI = (DS['PS'+regtag]*DS.hybi + DS.hyai*DS.P0)
+            #print('VarI',VarI)
+            #print('VarI col 0',VarI[0,0,:].values)
+            #print('PS',DS['PS'+regtag])
+            Var = DS['T'+regtag].copy()
+            Var = Var.rename(Varname)
+            #print('Var',Var)
+            Varx = VarI.diff("ilev").values/9.8
+            #print('Varx',Varx.shape)
+            Var.data = Varx
+            #print('new Var col 0', Var[0,0,:].values)
+            Var.attrs["units"] = 'kg/m2'
+            #Var.attrs["basename"] = 'DPOG'
+            Var.attrs["long_name"] = 'DeltaPressure(interfaces)_over_gravity'
+            x = Var.attrs.pop("standard_name")
+            #print('VarO',Var)
+            # make sure the returned quantities have the same coordinate order as standard
+            #ldims = list(DS['T'+regtag].dims)
+            #Var = Var.transpose(*ldims)
             #print('newPin.dims', Pin.dims)
             #print('newPin.shape', Pin.shape)
         elif Varname == "P3i": 
@@ -1045,14 +1082,14 @@ def xr_getvar(Varname, DS, regtag=None):
             Var.attrs['long_name'] = 'Stratiform (liq,ice) Precipitation'
             Var.attrs['units'] = 'mm/day'
         elif Varname == "PRECS":
-            Var = DS['PRECT'+regtag]-DS['PRECC'+regtag]
+            Var = (DS['PRECT'+regtag]-DS['PRECC'+regtag]).rename(Varname)
             Var = Var*8.64e7
-            Var.attrs['basename'] = Varname
+            #Var.attrs['basename'] = Varname
             Var.attrs['long_name'] = 'Stratiform Precipitation'
             Var.attrs['units'] = 'mm/day'
         elif Varname == "RESTOM":
-            Var = DS['FSNT'+regtag]-DS['FLNT'+regtag]
-            Var.attrs['basename'] = Varname
+            Var = (DS['FSNT'+regtag]-DS['FLNT'+regtag]).rename(Varname)
+            #Var.attrs['basename'] = Varname
             Var.attrs['long_name'] = 'Residual TOA flux'
             Var.attrs['units'] = 'W/m2'
         elif Varname == 'PS':
@@ -1064,9 +1101,10 @@ def xr_getvar(Varname, DS, regtag=None):
             Var = Var/100.
             Var.attrs['units'] = 'hPa'
         elif Varname == 'ZCONVT':
-            Var = DS['PCONVT'+regtag]
+            Var = DS['PCONVT'+regtag].copy()
+            Var = Var.rename(Varname)
             Var = Var/100.
-            Var.attrs['basename'] = Varname
+            #Var.attrs['basename'] = Varname
             Var.attrs['units'] = 'm'
             Var = -8.1e3*np.log(Var/1012.)  # rough conversion to m using 8km scale height
             Var.attrs['long_name'] = 'convection top height'

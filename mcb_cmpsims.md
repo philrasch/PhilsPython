@@ -19,6 +19,9 @@ print(sys.version)
 %matplotlib inline
 from xhistogram.xarray import histogram
 %run -i ~/Python/pjr3
+
+print('FIX RENAME USAGE IN PJR3.PY by first doing xr.copy(), then apply RENAME!!!')
+1./0.
 ```
 
 ```python
@@ -144,11 +147,17 @@ lat_h=np.arange(np.floor(latsub.values.min()),np.ceil(latsub.values.max()+dinc),
 xoutm,youtm=np.meshgrid(lon_h,lat_h)
 
 area = xr_getvar('area',DS1,regtag=regtag).where(pmask)
-weights = area.fillna(0)
+wtsh = area.fillna(0)
+#print('wtsh',wtsh)
+DPOG1 = xr_getvar('DPOG',DS1,regtag=regtag).where(pmask)
+weights1 = wtsh*DPOG1
+DPOG2 = xr_getvar('DPOG',DS2,regtag=regtag).where(pmask)
+weights2 = wtsh*DPOG2
+#print('weights',weights2)
 
 Varlist = np.array(['T','Q','CLOUD','CLDLIQ','ICWMR','CLDICE','RELHUM','NUMICE','NUMLIQ','Mass_bc'])
 #                    RESTOM','FLNT','FSNT','TS','TMQ','PRECT','AEROD_v','CLDLOW','CLDTOT','LWCF','SWCF','TGCLDIWP','TGCLDLWP','SHFLX','LHFLX','PBLH','PCONVT','PRECC','PRECS'])
-#Varlist = np.array(['TS','TMQ','PRECT'])
+Varlist = np.array(['T'])
 #Varlist = np.array(['RESTOM','LWCF','SWCF','FLNT','FSNT'])
 
 for Vname in Varlist:
@@ -165,9 +174,9 @@ for Vname in Varlist:
         V2 = xr_getvar(Vname, DS2, regtag).where(pmask).squeeze()
         DV = V1-V2
         print(Vname, V1.attrs['long_name'],'Range V1 and V2 ',V1.min().values, V1.max().values, V2.min().values, V2.max().values)
-        V1A = V1.weighted(weights).mean()
-        V2A = V2.weighted(weights).mean()
-        print('V1A %5.3f' % (V1A.values),' V2A %5.3f' % (V2A.values))
+        V1A = V1.weighted(weights1).mean()
+        V2A = V2.weighted(weights2).mean()
+        print('mass weight average: V1A %5.3f' % (V1A.values),' V2A %5.3f' % (V2A.values))
         
         data1 = interp_ap(xoutm, youtm, V1.values,latsub.values,lonsub.values).mean(axis=1).transpose()
         
@@ -195,6 +204,11 @@ for Vname in Varlist:
         plt.show()
       
 
+```
+
+```python
+Var = DS1['T'].diff("lev").rename('xxx')
+print(Var)
 ```
 
 ```python
