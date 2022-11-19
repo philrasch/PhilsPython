@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.13.8
+      jupytext_version: 1.14.0
   kernelspec:
     display_name: pjrpy3
     language: python
@@ -28,7 +28,7 @@ indir = os.path.expanduser('~/NetCDF_Files/*F2010*.nc')
 indir = os.path.expanduser('~/NetCDF_Files/F2010*01.nc')
 #indir = os.path.expanduser('~/NetCDF_Files/vd05_ANN_climo.nc')
 indir = os.path.expanduser('/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_e1/tests/M_1x1_nmonths/run/v2.LR.histAMIP_e1.eam.h4.2015-07-01-00000.nc')
-indir = os.path.expanduser('/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_x3/tests/M_1x2_ndays/run/v2.LR.histAMIP_x3.eam.h1.2015-07-*.nc')
+indir = os.path.expanduser('/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_x3/tests/M_1x2_ndays/run/v2.LR.histAMIP_x3.eam.h1.2015-07-*0.nc')
 print(indir)
 #print('exists',os.path.exists(indir))
 DS = xr.open_mfdataset(indir)#.chunk({'time': 20})

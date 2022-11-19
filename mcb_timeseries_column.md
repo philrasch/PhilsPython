@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.13.8
+      jupytext_version: 1.14.0
   kernelspec:
     display_name: pjrpy3
     language: python
@@ -28,7 +28,7 @@ print('xc,yc',xc,yc)
 ```python
 # process file holding data only over a region at every timestep of a model run
 indir = '/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_e1/tests/M_1x2_ndays/run/v2.LR.histAMIP_e1.eam.h1.2015-07-*.nc'
-indir = '/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_x3/tests/M_1x2_ndays/run/v2.LR.histAMIP_x3.eam.h1.2015-07-*.nc'
+indir = '/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_x3/tests/M_1x2_ndays/run/v2.LR.histAMIP_x3.eam.h1.2015-07-*0.nc'
 regtag = '_190e_to_250e_0n_to_35n'
 xr.set_options(keep_attrs=True)
 DS0 = xr.open_mfdataset(indir)
@@ -154,7 +154,8 @@ print('aaa',xr_getvar('ZCONVT',DS,regtag=regtag).isel(ncol_190e_to_250e_0n_to_35
 print('PRECc, PREct', PRECC.isel(ncol_190e_to_250e_0n_to_35n=ind,time=tind).values,
       PRECT.isel(ncol_190e_to_250e_0n_to_35n=ind,time=tind).values)
 PRECT.isel(ncol_190e_to_250e_0n_to_35n=ind).plot()
-PRECC.isel(ncol_190e_to_250e_0n_to_35n=ind).plot()
+PRECC.isel(ncol_190e_to_250e_0n_to_35n=ind).plot(add_legend=True)
+plt.legend(['total','convective'])
 print('bbb',PRECC.isel(ncol_190e_to_250e_0n_to_35n=ind).values)
 plt.show()
 PCONVTc.plot()
@@ -164,7 +165,7 @@ plt.show()
 
 ```python
 Varlist = ["ICWNC","ICWMR","CLOUDFRAC_CLUBB","PS","CAPE","T","CLOUD","CONCLD","ZCONVT"]
-#Varlist = ["ICWNC"]
+#Varlist = ["NUMLIQ"]
 for Vname in Varlist:
     Var = xr_getvar(Vname,DS,regtag=regtag)
     Varc = Var.isel(ncol_190e_to_250e_0n_to_35n=ind)

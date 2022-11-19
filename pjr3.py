@@ -1126,7 +1126,68 @@ def xr_getvar(Varname, DS, regtag=None):
     else:    
         return Var
 
-def xr_cshplot(xrVar, xrLon, xrLat):
+def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None):
+    """xr_cshplot xarray cubed sphere horizontal plot
+    """
+
+    dinc = 1.  # increment of mesh in degrees
+    lon_h=np.arange(np.floor(xrLon.min().values),np.ceil(xrLon.max().values+dinc), dinc)
+    lat_h=np.arange(np.floor(xrLat.min().values),np.ceil(xrLat.max().values+dinc), dinc)
+    xv,yv=np.meshgrid(lon_h,lat_h)
+    data_regridded = interp_ap(xv, yv, xrVar.values,xrLat.values,xrLon.values)
+    df = data_regridded.flatten()
+    dsub = df[np.isfinite(df)] # ignore NaN
+    zmax = dsub.max()
+    zmin = dsub.min()
+    #print('masked interpolated range',zmin,zmax)
+    dataproj=ccrs.PlateCarree()    # data is always assumed to be lat/lon
+    #plotproj=ccrs.Orthographic(central_latitude=0,central_longitude=55)   # any projections should work
+    #print('plotproj is ',plotproj)
+    if plotproj is None: plotproj = ccrs.Mercator
+    if ax is None: ax = plt.gca()
+    if cax is None: cax = ax
+    if ylabels is None: ylabels = True
+    if clevs is None:
+        clevs = findNiceContours(np.array([zmin,zmax]),nlevs=10)
+    #print('clevs',clevs)
+    if cmap is None:
+        #print('aaa, grabbing cmap default')
+        cmap = mpl.cm.get_cmap()
+        #print('bbb',cmap.N)
+    #print('cmap',cmap)
+    extend = 'both'
+    norm = mpl.colors.BoundaryNorm(clevs,cmap.N,extend=extend)
+    #print('norm',norm(clevs))
+
+    plotproj=ccrs.Mollweide(central_longitude=200)   # any projections should work 
+    clat = (lat.values.min()+lat.values.max())/2.
+    clon = (lon.values.min()+lon.values.max())/2.
+    #plotproj=ccrs.NearsidePerspective(central_longitude=clon, central_latitude=clat)
+    plotproj=ccrs.Mercator()
+    #ax = plt.axes(projection=plotproj)
+    #ax.set_extent([lon.values.min(), 260., lat.values.min(), lat.values.max()])
+    #ax.set_global()
+    pl = ax.contourf(xv, yv, data_regridded, levels=clevs, # vmin=zmin, vmax=zmax,
+                     norm=norm, cmap=cmap,
+                     extend=extend, transform=ccrs.PlateCarree())
+    # Add colorbar to plot
+    cb = plt.colorbar(
+        pl, orientation='horizontal',ticks=clevs,ax=ax,
+        label='%s (%s)'%(xrVar.long_name, xrVar.units), pad=0.1
+    )
+    if not title is None:
+        ax.set_title(title)
+        
+    cb.ax.tick_params(labelsize=8)
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                      linewidth=2, color='gray', alpha=0.5)
+    gl.left_labels=ylabels
+    gl.right_labels=ylabels
+    ax.coastlines(linewidth=1,color='blue')
+    return
+
+
+def xr_cshplot_v1(xrVar, xrLon, xrLat):
     """xr_cshplot xarray cubed sphere horizontal plot
     """
 
