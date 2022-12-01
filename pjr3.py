@@ -418,6 +418,7 @@ def findNiceContours(data,nlevs=None,rmClev=None,sym=None,verbose=None):
     f1 = abs(nlevsout-nlevs)
     if not verbose is None: print ("f1", f1)
     f2 = np.where(f1 == f1.min());
+    f2 = np.array(f2).flatten()
     if not verbose is None: print ("f2", f2)
     nlevbest = int(f2[0])
     if not verbose is None: print ("nlevbest, cintsbest",nlevbest, cints[nlevbest])
@@ -951,6 +952,12 @@ def xr_getvar(Varname, DS, regtag=None):
     if regtag == None:
         regtag = ""
         
+    # see whether the variable is on DS
+    if Varname in DS:
+        on_DS = True
+    else:
+        on_DS = False
+
     try:    # return derived variables, or modified variables, or variables on DS
         if Varname == "CLDLIQ":
             Var = DS['CLDLIQ'+regtag]
@@ -962,6 +969,10 @@ def xr_getvar(Varname, DS, regtag=None):
             Var = Var*1.e6
             Var.attrs['units'] = 'mg/kg'
             Var.attrs["long_name"] = 'grid-avg liq. Mix. Rat.'
+        elif Varname == "CLDLOW":
+            Var = DS['CLDLOW'+regtag]
+            Var = Var*1.e2
+            Var.attrs['units'] = '%'
         elif Varname == "CLOUD":
             Var = DS['CLOUD'+regtag]
             Var = Var*1.e2
@@ -987,8 +998,8 @@ def xr_getvar(Varname, DS, regtag=None):
             Var.attrs["units"] = 'hPa'
             Var.attrs["long_name"] = 'Pressure'
             # make sure the returned quantities have the same coordinate order as standard
-            #ldims = list(DS['T'+regtag].dims)
-            #Var = Var.transpose(*ldims)
+            ldims = list(DS['T'+regtag].dims)
+            Var = Var.transpose(*ldims)
             #print('newPin.dims', Pin.dims)
             #print('newPin.shape', Pin.shape)
         elif Varname == "P3i": 
@@ -1006,67 +1017,19 @@ def xr_getvar(Varname, DS, regtag=None):
         elif Varname == "DPOG": 
             # special treatment for constructing a 3D pressure from PS and
             # hybrid coefs
-            #VarI = (DS.hyai*DS.P0 + DS.hybi*DS['PS'+regtag])/100.
             VarI = (DS['PS'+regtag]*DS.hybi + DS.hyai*DS.P0)
-            #print('VarI',VarI)
-            #print('VarI col 0',VarI[0,0,:].values)
-            #print('PS',DS['PS'+regtag])
-            Var = DS['T'+regtag].copy()
-            Var = Var.rename(Varname)
-            #print('Var',Var)
-            Varx = VarI.diff("ilev").values/9.8
-            #print('Varx',Varx.shape)
-            Var.data = Varx
-            #print('new Var col 0', Var[0,0,:].values)
-            Var.attrs["units"] = 'kg/m2'
-            #Var.attrs["basename"] = 'DPOG'
-            Var.attrs["long_name"] = 'DeltaPressure(interfaces)_over_gravity'
-            x = Var.attrs.pop("standard_name")
-            #print('VarO',Var)
-            # make sure the returned quantities have the same coordinate order as standard
-            #ldims = list(DS['T'+regtag].dims)
-            #Var = Var.transpose(*ldims)
-            #print('newPin.dims', Pin.dims)
-            #print('newPin.shape', Pin.shape)
-        elif Varname == "P3i": 
-            # special treatment for constructing a 3D pressure from PS and
-            # hybrid coefs
-            #Var = (DS.hyai*DS.P0 + DS.hybi*DS['PS'+regtag])/100.
-            Var = (DS['PS'+regtag]*DS.hybi + DS.hyai*DS.P0)/100.
-            Var.attrs["units"] = 'hPa'
-            Var.attrs["long_name"] = 'Pressure(interfaces)'
-            # make sure the returned quantities have the same coordinate order as standard
-            #ldims = list(DS['T'+regtag].dims)
-            #Var = Var.transpose(*ldims)
-            #print('newPin.dims', Pin.dims)
-            #print('newPin.shape', Pin.shape)
-        elif Varname == "DPOG": 
-            # special treatment for constructing a 3D pressure from PS and
-            # hybrid coefs
-            #VarI = (DS.hyai*DS.P0 + DS.hybi*DS['PS'+regtag])/100.
-            VarI = (DS['PS'+regtag]*DS.hybi + DS.hyai*DS.P0)
+            dpogdata = VarI.diff("ilev").values/9.8
+            # find a 3D field to copy
             required_dims = ('lon'+regtag, 'lat'+regtag, 'lev')
-            mylist = find_vars_bydims(DS1,required_dims)
-            #print('VarI',VarI)
-            #print('VarI col 0',VarI[0,0,:].values)
-            #print('PS',DS['PS'+regtag])
+            mylist = find_vars_bydims(DS,required_dims)
             Var = DS[mylist[0]].copy()
+            Var.data = dpogdata
             Var = Var.rename(Varname)
-            #print('Var',Var)
-            Varx = VarI.diff("ilev").values/9.8
-            #print('Varx',Varx.shape)
-            Var.data = Varx
-            #print('new Var col 0', Var[0,0,:].values)
             Var.attrs["units"] = 'kg/m2'
-            #Var.attrs["basename"] = 'DPOG'
             Var.attrs["long_name"] = 'DeltaPressure(interfaces)_over_gravity'
-            #x = Var.attrs.pop("standard_name")
-            #print('VarO',Var)
-            # make sure the returned quantities have the same coordinate order as standard
-            #ldims = list(DS['T'+regtag].dims)
-            #Var = Var.transpose(*ldims)
-            #print('newPin.dims', Pin.dims)
-            #print('newPin.shape', Pin.shape)
+        elif Varname == "CDNUMC":
+            Var = DS[Varname+regtag]
+            Var.attrs['long_name'] = 'Vert Int drop number'
         elif Varname == "PRECC":
             Var = DS['PRECC'+regtag]
             Var = Var*8.64e7
@@ -1082,14 +1045,14 @@ def xr_getvar(Varname, DS, regtag=None):
             Var.attrs['long_name'] = 'Stratiform (liq,ice) Precipitation'
             Var.attrs['units'] = 'mm/day'
         elif Varname == "PRECS":
-            Var = (DS['PRECT'+regtag]-DS['PRECC'+regtag]).rename(Varname)
+            Var = DS['PRECT'+regtag]-DS['PRECC'+regtag]
             Var = Var*8.64e7
-            #Var.attrs['basename'] = Varname
+            Var.attrs['basename'] = Varname
             Var.attrs['long_name'] = 'Stratiform Precipitation'
             Var.attrs['units'] = 'mm/day'
         elif Varname == "RESTOM":
-            Var = (DS['FSNT'+regtag]-DS['FLNT'+regtag]).rename(Varname)
-            #Var.attrs['basename'] = Varname
+            Var = DS['FSNT'+regtag]-DS['FLNT'+regtag]
+            Var.attrs['basename'] = Varname
             Var.attrs['long_name'] = 'Residual TOA flux'
             Var.attrs['units'] = 'W/m2'
         elif Varname == 'PS':
@@ -1101,93 +1064,58 @@ def xr_getvar(Varname, DS, regtag=None):
             Var = Var/100.
             Var.attrs['units'] = 'hPa'
         elif Varname == 'ZCONVT':
-            Var = DS['PCONVT'+regtag].copy()
-            Var = Var.rename(Varname)
+            Var = DS['PCONVT'+regtag]
             Var = Var/100.
-            #Var.attrs['basename'] = Varname
+            Var.attrs['basename'] = Varname
             Var.attrs['units'] = 'm'
             Var = -8.1e3*np.log(Var/1012.)  # rough conversion to m using 8km scale height
             Var.attrs['long_name'] = 'convection top height'
             Var = Var.rename(Varname)
+        elif Varname == 'LWCF':
+            Var = DS['LWCF'+regtag]
+            Var.attrs['long_name'] = 'LW Cloud Radiative Effect'
+        elif Varname == 'SWCF':
+            Var = DS['SWCF'+regtag]
+            Var.attrs['long_name'] = 'SW Cloud Radiative Effect'
         elif Varname == "TGCLDLWP":
             Var = DS['TGCLDLWP'+regtag]
             Var = Var*1.e3
-            Var.attrs['units'] = 'g/kg'
+            Var.attrs['units'] = 'g/m2'
             Var.attrs["long_name"] = 'grid-avg LWP.'
         elif Varname == "AODVIS":
             Var = DS[Varname+regtag]
-            Var.attrs['units'] = '1'
-            #print('add units attribute')
+            Var.attrs['units'] = '1' #print('add units attribute')
+        elif Varname == 'XXXXXX':
+            print ('example of a complicated calculation')
+            if on_DS:
+                Var = DS[Varname]
+                Var.attrs['long_name'] = 'Vert Int drop number'
+                print('from file')
+            else:
+                VarI = (DS['PS'+regtag]*DS.hybi + DS.hyai*DS.P0) #interface pressures
+                dpogdata = VarI.diff("ilev").values/9.8
+                print('dpogdata shape', dpogdata.shape)
+                print('NUMLIQ shape', DS['NUMLIQ'].shape)
+                Varx = DS['NUMLIQ'].transpose(...,'lev')*dpogdata
+                Var = DS['PS'].copy()
+                Var.data = Varx.sum(dim='lev')
+                Var = Var.rename(Varname)
+                Var.attrs["units"] = '1/m2'
+                Var.attrs["long_name"] = 'Vert. Int drop number'
+                print ('derived')
         else:  # look in Xarray dataset DS
-            Var = DS[Varname+regtag]
+            if on_DS:
+                Var = DS[Varname+regtag]
+            else:
+                estr = Varname+regtag+' is not defined or found in DS'
+                raise UserWarning(estr)
     except KeyError:  # variable not a derived field or on DS
         estr = Varname+regtag+' is not defined or found in DS'
         raise UserWarning(estr)
     else:    
         return Var
 
-def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None):
-    """xr_cshplot xarray cubed sphere horizontal plot
-    """
-
-    dinc = 1.  # increment of mesh in degrees
-    lon_h=np.arange(np.floor(xrLon.min().values),np.ceil(xrLon.max().values+dinc), dinc)
-    lat_h=np.arange(np.floor(xrLat.min().values),np.ceil(xrLat.max().values+dinc), dinc)
-    xv,yv=np.meshgrid(lon_h,lat_h)
-    data_regridded = interp_ap(xv, yv, xrVar.values,xrLat.values,xrLon.values)
-    df = data_regridded.flatten()
-    dsub = df[np.isfinite(df)] # ignore NaN
-    zmax = dsub.max()
-    zmin = dsub.min()
-    #print('masked interpolated range',zmin,zmax)
-    dataproj=ccrs.PlateCarree()    # data is always assumed to be lat/lon
-    #plotproj=ccrs.Orthographic(central_latitude=0,central_longitude=55)   # any projections should work
-    #print('plotproj is ',plotproj)
-    if plotproj is None: plotproj = ccrs.Mercator
-    if ax is None: ax = plt.gca()
-    if cax is None: cax = ax
-    if ylabels is None: ylabels = True
-    if clevs is None:
-        clevs = findNiceContours(np.array([zmin,zmax]),nlevs=10)
-    #print('clevs',clevs)
-    if cmap is None:
-        #print('aaa, grabbing cmap default')
-        cmap = mpl.cm.get_cmap()
-        #print('bbb',cmap.N)
-    #print('cmap',cmap)
-    extend = 'both'
-    norm = mpl.colors.BoundaryNorm(clevs,cmap.N,extend=extend)
-    #print('norm',norm(clevs))
-
-    plotproj=ccrs.Mollweide(central_longitude=200)   # any projections should work 
-    clat = (lat.values.min()+lat.values.max())/2.
-    clon = (lon.values.min()+lon.values.max())/2.
-    #plotproj=ccrs.NearsidePerspective(central_longitude=clon, central_latitude=clat)
-    plotproj=ccrs.Mercator()
-    #ax = plt.axes(projection=plotproj)
-    #ax.set_extent([lon.values.min(), 260., lat.values.min(), lat.values.max()])
-    #ax.set_global()
-    pl = ax.contourf(xv, yv, data_regridded, levels=clevs, # vmin=zmin, vmax=zmax,
-                     norm=norm, cmap=cmap,
-                     extend=extend, transform=ccrs.PlateCarree())
-    # Add colorbar to plot
-    cb = plt.colorbar(
-        pl, orientation='horizontal',ticks=clevs,ax=ax,
-        label='%s (%s)'%(xrVar.long_name, xrVar.units), pad=0.1
-    )
-    if not title is None:
-        ax.set_title(title)
-        
-    cb.ax.tick_params(labelsize=8)
-    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-                      linewidth=2, color='gray', alpha=0.5)
-    gl.left_labels=ylabels
-    gl.right_labels=ylabels
-    ax.coastlines(linewidth=1,color='blue')
-    return
-
-
-def xr_cshplot_v1(xrVar, xrLon, xrLat):
+def xr_cshplot(xrVar, xrLon, xrLat):
     """xr_cshplot xarray cubed sphere horizontal plot
     """
 
