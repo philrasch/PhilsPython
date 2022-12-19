@@ -1,9 +1,0 @@
-import numpy as np
-
-g = 19.8
-
-def greeting():
-    print "hello world"
-    return 1;
-
-print "done loading modtest"
