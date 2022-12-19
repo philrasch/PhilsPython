@@ -14,11 +14,11 @@ dependencies:
   - pynco
   - jupyterlab
   - cdo
-  - statsmodels
-  - xhistogram
-  - ncview
-  - nodejs
-  - regionmask
-  - pygeos
-  - jupytext
-  - nc-time-axis
+#  - statsmodels
+#  - xhistogram
+##  - ncview
+#  - nodejs
+#  - regionmask
+#  - pygeos
+#  - jupytext
+#  - nc-time-axis
