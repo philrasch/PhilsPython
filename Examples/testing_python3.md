@@ -7,9 +7,9 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.14.4
   kernelspec:
-    display_name: Python [conda env:pjrpy-scp] *
+    display_name: Python [conda env:pjrpy] *
     language: python
-    name: conda-env-pjrpy-scp-py
+    name: conda-env-pjrpy-py
 ---
 
 ```python
