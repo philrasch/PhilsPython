@@ -977,8 +977,9 @@ def xr_getvar(Varname, DS, regtag=None):
             Var = Var*1.e6
             Var.attrs['units'] = 'mg/kg'
             Var.attrs["long_name"] = 'grid-avg liq. Mix. Rat.'
-        elif Varname == "CLDLOW":
-            Var = DS['CLDLOW'+regtag]
+        elif ((Varname == "CLDLOW") or (Varname == "CLDMED") or
+              (Varname == "CLDHGH") or (Varname == "CLDTOT")):
+            Var = DS[Varname+regtag]
             Var = Var*1.e2
             Var.attrs['units'] = '%'
         elif Varname == "CLOUD":
@@ -1107,20 +1108,20 @@ def xr_getvar(Varname, DS, regtag=None):
             Var = Var*8.64e7
             Var.attrs['units'] = 'mm/day'
         elif Varname == "PRECT":
-            Var = DS['PRECT'+regtag]
+            if on_DS:
+                Var = DS['PRECT'+regtag]
+            else:
+                Var = DS['PRECC'+regtag]+DS['PRECL'+regtag]
             Var = Var*8.64e7
             Var.attrs['long_name'] = 'Total(liq,ice,conv,strat) Precipitation'
             Var.attrs['units'] = 'mm/day'
         elif Varname == "PRECL":
-            Var = DS['PRECL'+regtag]
+            if on_DS:
+                Var = DS['PRECL'+regtag]
+            else:
+                Var = (DS['PRECT'+regtag]-DS['PRECC'+regtag]).rename(Varname)
             Var = Var*8.64e7
             Var.attrs['long_name'] = 'Stratiform (liq,ice) Precipitation'
-            Var.attrs['units'] = 'mm/day'
-        elif Varname == "PRECS":
-            Var = (DS['PRECT'+regtag]-DS['PRECC'+regtag]).rename(Varname)
-            Var = Var*8.64e7
-            #Var.attrs['basename'] = Varname
-            Var.attrs['long_name'] = 'Stratiform Precipitation'
             Var.attrs['units'] = 'mm/day'
         elif Varname == "RESTOM":
             Var = (DS['FSNT'+regtag]-DS['FLNT'+regtag]).rename(Varname)

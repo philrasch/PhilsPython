@@ -1,0 +1,24 @@
+name: pjrpy_v5
+channels:
+  - defaults
+dependencies:
+  - conda-forge::proj
+  - ca-certificates
+  - certifi
+  - openssl
+  - conda-forge::pyproj
+  - conda-forge::python
+  - conda-forge::dask
+  - conda-forge::xarray
+  - matplotlib
+  - bottleneck
+  - nb_conda_kernels
+  - jupyterlab
+  - conda-forge::mamba
+  - jupytext
+  - nodejs
+  - regionmask
+  - nc-time-axis
+  - pygeos
+  - cartopy
+  
