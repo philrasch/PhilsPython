@@ -7,9 +7,9 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.14.0
   kernelspec:
-    display_name: pjrpy3
+    display_name: Python [conda env:.conda-pjrpy3]
     language: python
-    name: pjrpy3
+    name: conda-env-.conda-pjrpy3-py
 ---
 
 ```python
@@ -59,7 +59,8 @@ if ('cori' in host):
     indir = os.path.expanduser('~/NetCDF_Files/vd05_ANN_climo.nc')
 else:
     indir = os.path.expanduser('~/NetCDF_Files/vd05_JJA_climo.nc')
-    #indir = os.path.expanduser('~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
+    indir = os.path.expanduser('~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
+    indir = os.path.expanduser('~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01_fv192x288.nc')
 print(indir)
 #print('exists',os.path.exists(indir))
 DS = xr.open_mfdataset(indir).chunk({'time': 20})
@@ -82,7 +83,7 @@ print('area weighted mean', Varm2.values)
 
 ```python
 print(Varm2.values)
-Varm2.plot()
+#Varm2.plot()
 ```
 
 ```python
@@ -109,6 +110,7 @@ print(T)
 #DS = xr.open_dataset('~/NetCDF_Files/vd05_ANN_climo.nc')
 #print (DS.T) 
 T = DS.T.isel(time=0)
+print('T',T)
 #T?
 TZ = T.mean(dim='lon')
 #TZ?
