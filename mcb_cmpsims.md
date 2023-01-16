@@ -8,9 +8,9 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.14.0
   kernelspec:
-    display_name: pjrpy3
+    display_name: Python [conda env:.conda-pjrpy3]
     language: python
-    name: pjrpy3
+    name: conda-env-.conda-pjrpy3-py
 ---
 
 **compare two simulations on the ne30 native grid

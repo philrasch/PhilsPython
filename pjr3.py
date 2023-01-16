@@ -958,6 +958,14 @@ def xr_getvar(Varname, DS, regtag=None):
     else:
         on_DS = False
 
+    for vv in DS1:
+        dlist = list(DS1[vv].dims)
+        ndlist = len(dlist)
+        if 'lev' in dlist and 'time' in dlist and ndlist > 2:
+            #print('lev and time found and number of dims > 2',vv,dlist)
+            nm3dv = vv
+            break
+        
     try:    # return derived variables, or modified variables, or variables on DS
         if Varname == "CLDLIQ":
             Var = DS['CLDLIQ'+regtag]
@@ -1022,17 +1030,21 @@ def xr_getvar(Varname, DS, regtag=None):
             #print('VarI',VarI)
             #print('VarI col 0',VarI[0,0,:].values)
             #print('PS',DS['PS'+regtag])
-            Var = DS['T'+regtag].copy()
+            print('using this variable is a template for DPOG',nm3dv)
+            Var = DS[nm3dv+regtag].copy()
             Var = Var.rename(Varname)
             #print('Var',Var)
             Varx = VarI.diff("ilev").values/9.8
             #print('Varx',Varx.shape)
             Var.data = Varx
+            Var.attrs = {}
             #print('new Var col 0', Var[0,0,:].values)
             Var.attrs["units"] = 'kg/m2'
             #Var.attrs["basename"] = 'DPOG'
             Var.attrs["long_name"] = 'DeltaPressure(interfaces)_over_gravity'
-            x = Var.attrs.pop("standard_name")
+#            latr = var.attrs
+#            if 'standard_name' in latr.keys():
+#                x = Var.attrs.pop("standard_name")
             #print('VarO',Var)
             # make sure the returned quantities have the same coordinate order as standard
             #ldims = list(DS['T'+regtag].dims)
@@ -1236,6 +1248,70 @@ def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=Non
     ax.coastlines(linewidth=1,color='blue')
     return
 
+def xr_llhplot(xrVar, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None):
+    """xr_llhplot xarray lat lon horizontal plot
+    """
+    #print(' entering xr_llhplot', xrVar)
+    
+    lon=xrVar['lon'].values
+    lat=xrVar['lat'].values
+    xv,yv=np.meshgrid(lon,lat)
+    data_regridded = xrVar.values
+    #print('aaa',data_regridded.shape, xv.shape, yv.shape)
+    df = data_regridded.flatten()
+    dsub = df[np.isfinite(df)] # ignore NaN
+    zmax = dsub.max()
+    zmin = dsub.min()
+    #print('masked interpolated range',zmin,zmax)
+    dataproj=ccrs.PlateCarree()    # data is always assumed to be lat/lon
+    if ylabels is None: ylabels = True
+    if clevs is None:
+        clevs = findNiceContours(np.array([zmin,zmax]),nlevs=10)
+    #print('clevs',clevs)
+    if cmap is None:
+        #print('aaa, grabbing cmap default')
+        cmap = mpl.cm.get_cmap()
+        #print('bbb',cmap.N)
+    #print('cmap',cmap)
+    extend = 'both'
+    norm = mpl.colors.BoundaryNorm(clevs,cmap.N,extend=extend)
+    #print('norm',norm(clevs))
+    clat = (lat.min()+lat.max())/2.
+    clon = (lon.min()+lon.max())/2.
+    if plotproj is None:
+        plotproj = ccrs.PlateCarree()
+        plotproj = ccrs.Mollweide()
+    #ax.set_extent([lon.values.min(), 260., lat.values.min(), lat.values.max()])
+    #ax.set_global()
+    #print('plotproj is ',plotproj)
+    #rint('ax',ax)
+ 
+    # if no ax argument, could get current axis, or create it
+    if ax is None:
+        #print('grab current axis')
+        #ax = plt.gca()
+        ax = plt.axes(projection=plotproj)
+
+    if cax is None: cax = ax
+    pl = ax.contourf(xv, yv, data_regridded, levels=clevs, # vmin=zmin, vmax=zmax,
+                     norm=norm, cmap=cmap,
+                     extend=extend, transform=ccrs.PlateCarree())
+
+    # Add colorbar to plot
+    cb = plt.colorbar(
+        pl, orientation='horizontal',ticks=clevs,ax=cax,
+        label='%s (%s)'%(xrVar.long_name, xrVar.units), pad=0.1
+    )
+    if not title is None:
+        ax.set_title(title)
+        
+    cb.ax.tick_params(labelsize=8)
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
+                      linewidth=2, color='gray', alpha=0.5)
+    gl.left_labels=ylabels
+    gl.right_labels=ylabels
+    ax.coastlines(linewidth=1,color='blue')
+    return
 
 def xr_cshplot_v1(xrVar, xrLon, xrLat):
     """xr_cshplot xarray cubed sphere horizontal plot
