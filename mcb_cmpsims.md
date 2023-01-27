@@ -20,7 +20,7 @@ does zonal averaging, and can focus on a small region**
 import sys
 print(sys.version)
 %matplotlib inline
-from xhistogram.xarray import histogram
+#from xhistogram.xarray import histogram
 %run -i ~/Python/pjr3
 
 ```

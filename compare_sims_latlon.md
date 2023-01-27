@@ -36,6 +36,7 @@ Varlist = np.array(['FLNT','FSNT','TS','PRECC','PRECL','CLDLOW','CLDTOT','LWCF',
 #Varlist = np.array(['AEROD_v'])
 Varlist = np.array(['CLDLOW','TGCLDLWP','PRECL','PRECC','SWCF'])
 Varlist = np.array(['FSNT','FSNTC','FLNT','FLNTC'])
+Varlist = np.array(['FSNT'])
 
 case_start1 = "/home/jupyter-haruki/work/CESM_MCB/MCB_R1R2R3_CN375cm/MCB_R1R2R3_CN375cm.cam.h0." 
 case_start1 = "/home/jupyter-haruki/work/CESM_MCB/MCB_R1R2R3_CN600cm/MCB_R1R2R3_CN600cm.cam.h0."
@@ -52,7 +53,7 @@ case_end2 = ".y1-19.nc"
 pref2='CESMcontrol'
 fstring2 ='%s%s%s' 
 
-#"""
+"""
 
 case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.y1-5.FORCING.nc"
 case_end1 = ""
@@ -78,7 +79,7 @@ fstring2 ='%s%.0s%.0s'
 fstring2 ='%s%s%s' 
 pref2='E3SMcontrol'
 
-#"""
+"""
 
 Varname='<Varname>'
 ind1 = fstring1 % (case_start1,Varname,case_end1)
@@ -106,17 +107,18 @@ for Varname in Varlist:
 
     DV = V1-V2
     
-    if weights is None:
+    if 'area' in DS1:
+        area = DS1['area']
+    elif 'area' in DS2:
+        area = DS2['area']
+    else:
+        print('calculating weights')
         lat = Var1['lat'].values
         lon = Var1['lon'].values
         area = make_fvarea(lon,lat)
-        weights = V1.copy()
-        weights.data =area
-        weights.attrs['units']='steradians'
-        #area = xr_getvar('area',DS1).where(pmask)
-        #print('weights',weights)
-        #print('weights shape',weights.shape)
-
+    weights = V1.copy()
+    weights.data =area
+    weights.attrs['units']='steradians'
     
     print(Varname, V1.attrs['long_name'],'Range V1 and V2 ',V1.min().values, V1.max().values, V2.min().values, V2.max().values)
     V1A = V1.weighted(weights).mean()

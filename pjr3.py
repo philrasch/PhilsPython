@@ -958,8 +958,9 @@ def xr_getvar(Varname, DS, regtag=None):
     else:
         on_DS = False
 
-    for vv in DS1:
-        dlist = list(DS1[vv].dims)
+    # identify a variable that has time, and lev, and another spatial dimension for use in constructing 3D vars
+    for vv in DS:
+        dlist = list(DS[vv].dims)
         ndlist = len(dlist)
         if 'lev' in dlist and 'time' in dlist and ndlist > 2:
             #print('lev and time found and number of dims > 2',vv,dlist)
@@ -1079,7 +1080,7 @@ def xr_getvar(Varname, DS, regtag=None):
             #VarI = (DS.hyai*DS.P0 + DS.hybi*DS['PS'+regtag])/100.
             VarI = (DS['PS'+regtag]*DS.hybi + DS.hyai*DS.P0)
             required_dims = ('lon'+regtag, 'lat'+regtag, 'lev')
-            mylist = find_vars_bydims(DS1,required_dims)
+            mylist = find_vars_bydims(DS,required_dims)
             #print('VarI',VarI)
             #print('VarI col 0',VarI[0,0,:].values)
             #print('PS',DS['PS'+regtag])
@@ -1112,6 +1113,17 @@ def xr_getvar(Varname, DS, regtag=None):
                 Var = DS['PRECT'+regtag]
             else:
                 Var = DS['PRECC'+regtag]+DS['PRECL'+regtag]
+            Var = Var*8.64e7
+            Var.attrs['long_name'] = 'Total(liq,ice,conv,strat) Precipitation'
+            Var.attrs['units'] = 'mm/day'
+        elif Varname == "area_unfinished":
+            if on_DS:
+                Var = DS['area'+regtag]
+            else:
+                lat = Var1['lat'].values
+                lon = Var1['lon'].values
+                area = make_fvarea(lon,lat)
+                Var = DS['PRECC'+regtag]
             Var = Var*8.64e7
             Var.attrs['long_name'] = 'Total(liq,ice,conv,strat) Precipitation'
             Var.attrs['units'] = 'mm/day'
