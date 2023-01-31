@@ -5,18 +5,18 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.0
+      jupytext_version: 1.14.4
   kernelspec:
-    display_name: pjrpy3
+    display_name: Python [conda env:pjrpy] *
     language: python
-    name: pjrpy3
+    name: conda-env-pjrpy-py
 ---
 
 ```python
 import sys
 print(sys.version)
 %matplotlib inline
-%run -i ~/Python/pjr3
+%run -i ~/Python/pjr3.py
 from jupytext.config import find_jupytext_configuration_file
 print('jupytext config file is ',find_jupytext_configuration_file('.'))
 ```
@@ -39,7 +39,7 @@ plotZMf?
 ```
 
 ```python
-from nco import Nco
+#from nco import Nco
 ```
 
 ```python
@@ -58,8 +58,8 @@ if ('cori' in host):
     indir = '/global/cscratch1/sd/ogaruba/acme_scratch/cori-haswell/archive/E1850C5CLM45CNMC.ne30_oECv3_3/atm/hist/E1850C5CLM45CNMC.ne30_oECv3_3.cam.h0.0049-06.nc'
     indir = os.path.expanduser('~/NetCDF_Files/vd05_ANN_climo.nc')
 else:
-    indir = os.path.expanduser('~/NetCDF_Files/vd05_JJA_climo.nc')
-    #indir = os.path.expanduser('~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
+    indir = os.path.expanduser('~/Desktop/NetCDF_Files/vd05_JJA_climo.nc')
+    indir = os.path.expanduser('~/Desktop/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
 print(indir)
 #print('exists',os.path.exists(indir))
 DS = xr.open_mfdataset(indir).chunk({'time': 20})
@@ -81,15 +81,22 @@ print('area weighted mean', Varm2.values)
 ```
 
 ```python
+print(Varm2)
+
 print(Varm2.values)
-Varm2.plot()
+#Varm2.plot()
 ```
 
 ```python
 FSNT = DS.FSNT
 #FSNTg = FSNT.weighted(weights).mean('ncol')
 FSNTg = FSNT.weighted(weights).mean()
-FSNTg.plot()
+print(FSNTg.values)
+#FSNTg.plot()
+```
+
+```python
+FSNT.plot()
 ```
 
 ```python
@@ -109,6 +116,7 @@ print(T)
 #DS = xr.open_dataset('~/NetCDF_Files/vd05_ANN_climo.nc')
 #print (DS.T) 
 T = DS.T.isel(time=0)
+print('T',T)
 #T?
 TZ = T.mean(dim='lon')
 #TZ?
@@ -135,7 +143,7 @@ print(z[1,:,-1])
 ```python
 # interpolate xarray datavariable on eta hybrid surfaces to pressure
 
-indir = os.path.expanduser('~/NetCDF_Files/F2010*-01.nc')
+indir = os.path.expanduser('~/Desktop/NetCDF_Files/F2010*-01.nc')
 #indir = os.path.expanduser('/lustre/choi040/20210920.F2010.1Nudg.ne30pg2_r05_oECv3/run/20210920.F2010.1Nudg.ne30pg2_r05_oECv3.eam.h2.2015-01-01-00000.nc')
 #indir = os.path.expanduser('~/NetCDF_Files/*F2010*01.nc')
 #indir = os.path.expanduser('~/NetCDF_Files/vd05_ANN_climo.nc')
@@ -164,11 +172,11 @@ Tout = hy2plev(Tin, Pin, pout)
 ```
 
 ```python
-%run -i ~/Python/pjr3
+#%run -i ~/Python/pjr3
 from cartopy import crs
 
 indir = os.path.expanduser('/lustre/choi040/20210920.F2010.1Nudg.ne30pg2_r05_oECv3/run/20210920.F2010.1Nudg.ne30pg2_r05_oECv3.eam.h0.2015-01.nc')
-indir = os.path.expanduser('~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
+indir = os.path.expanduser('~/Desktop/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
 
 DS = xr.open_mfdataset(indir).chunk({'time': 20})
 Tout = DS.PS.isel(time=0)
@@ -199,23 +207,38 @@ plotproj=crs.Orthographic(central_latitude=-50)   # any projections should work
 ax = plt.axes(projection=plotproj)
 ax.set_global()
 ax.coastlines(linewidth=0.2)
+if True:
 
-tcoords = plotproj.transform_points(dataproj,np.array(lon[:]),np.array(lat[:]))
-data2d = data
-#xi=tcoords[:,0]!=np.inf
-xi = np.where(~(np.isnan(tcoords[:,0])|np.isinf(tcoords[:,0])))[0] # this works for either
-tc=tcoords[xi,:]
-datai=data2d[:][xi]  # convert to numpy array, then subset
-dmin = datai.min().values
-dmax = datai.max().values
-pl = ax.tripcolor(tc[:,0],tc[:,1], datai,shading='gouraud',vmin=dmin,vmax=dmax) # looks good
-#pl = ax.tripcolor(tc[:,0],tc[:,1], datai,shading='flat') # looks bad
-# Add colorbar to plot
-cb = plt.colorbar(
-    pl, orientation='horizontal',
-    label='%s (%s)'%(data.long_name, data.units), pad=0.05
-)
-plt.show
+    tcoords = plotproj.transform_points(dataproj,np.array(lon[:]),np.array(lat[:]))
+    data2d = data
+    #xi=tcoords[:,0]!=np.inf
+    xi = np.where(~(np.isnan(tcoords[:,0])|np.isinf(tcoords[:,0])))[0] # this works for either
+    tc=tcoords[xi,:]
+    datai=data2d[:][xi]  # convert to numpy array, then subset
+    dmin = datai.min().values
+    dmax = datai.max().values
+    pl = ax.tripcolor(tc[:,0],tc[:,1], datai,shading='gouraud',vmin=dmin,vmax=dmax) # looks good
+    #pl = ax.tripcolor(tc[:,0],tc[:,1], datai,shading='flat') # looks bad
+    # Add colorbar to plot
+    cb = plt.colorbar(
+        pl, orientation='horizontal',
+        label='%s (%s)'%(data.long_name, data.units), pad=0.05
+    )
+    plt.show
+```
+
+```python
+import cartopy.crs as ccrs
+import matplotlib.pyplot as plt
+
+plotproj=ccrs.Orthographic(central_latitude=50)   # any projections should work 
+#plotproj=ccrs.Stereographic(central_latitude=50)   # any projections should work 
+#plotproj=ccrs.NearsidePerspective(central_latitude=50)
+#ax = plt.axes(projection=ccrs.PlateCarree())
+ax = plt.axes(projection=plotproj)
+ax.coastlines()
+
+plt.show()
 ```
 
 ```python
@@ -245,12 +268,13 @@ print('Tout', Tout.shape, Tout.squeeze().shape)
 #for index, item in enumerate(Pinm):
 #    print('Pinx ',index, Pinm[index].values, Tinm[index].values)
 #Toutm = Tout[:,ind]
-Toutm = Tout[ind]
-#print('Toutm',Toutm)
+#Toutm = Tout[ind,].load()
+Toutm = Tout.isel(ncol=ind).load()
+print('Toutm',Toutm)
 #for index, item in enumerate(Toutm):
 #    print('Poutx ',index, pout[index], Toutm[index].values)
 
-Toutm.plot()
+Toutm.plot.hist()
 ```
 
 ```python

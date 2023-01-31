@@ -6,11 +6,11 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.0
+      jupytext_version: 1.14.4
   kernelspec:
-    display_name: Python [conda env:.conda-pjrpy3]
+    display_name: Python [conda env:pjrpy] *
     language: python
-    name: conda-env-.conda-pjrpy3-py
+    name: conda-env-pjrpy-py
 ---
 
 **compare two simulations on the ne30 native grid
@@ -20,12 +20,10 @@ does zonal averaging, and can focus on a small region**
 import sys
 print(sys.version)
 %matplotlib inline
-#from xhistogram.xarray import histogram
 %run -i ~/Python/pjr3
-
 ```
 
-```python
+```python tags=[]
 # process file holding data only over a region at every timestep of a model run
 
 pref1 = 'exp_'
@@ -45,6 +43,11 @@ pref1 = 'exp_'
 ind1 = '/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_e6/climo/v2.LR.histAMIP_e6_ANN_200001_200412_climo.nc'
 pref2 = 'con_'
 ind2 = '/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_c6/climo/v2.LR.histAMIP_c6_ANN_200001_200412_climo.nc'
+regtag = ''
+pref1 = 'Jan'
+ind1 = '~/Desktop/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
+pref2 = 'Feb'
+ind2 = '~/Desktop/NetCDF_Files/F2010_PJR1.eam.h0.0001-02.nc'
 regtag = ''
 xr.set_options(keep_attrs=True)
 # reorder coords so ncol is alway first dim 
@@ -172,11 +175,11 @@ area = xr_getvar('area', DS1, regtag).isel(ncol=colinds).squeeze()
 weights = area.fillna(0)
 
 Varlist = np.array(['RESTOM','FLNTC','FLNT','FSNTC','FSNT','TS','TMQ','PRECT','AEROD_v','CLDLOW','CLDTOT','LWCF','SWCF','TGCLDIWP','TGCLDLWP',
-                    'SHFLX','LHFLX','PBLH','PCONVT','PRECC','PRECS'])
-#Varlist = np.array(['TS','TMQ','PRECT'])
+                    'SHFLX','LHFLX','PBLH','PRECC','PRECL'])
+#Varlist = np.array(['TS','TMQ','PRECT','PCONVT'])
 #Varlist = np.array(['RESTOM','LWCF','SWCF','FLNT','FSNT'])
-Varlist = np.array(['AEROD_v'])
-
+#Varlist = np.array(['AEROD_v'])
+#Varlist = np.array(['SOLIN'])
 
 for Vname in Varlist:
     print()
@@ -210,6 +213,85 @@ for Vname in Varlist:
         plt.savefig('test_'+Vname+'.jpg',format='jpg')
         plt.show()
 
+```
+
+```python
+SWCF = xr_getvar("SWCF", DS1, regtag).isel(ncol=colinds).squeeze()
+FSNTOAC = xr_getvar("FSNTOAC", DS1, regtag).isel(ncol=colinds).squeeze()
+FSNTOA = xr_getvar("FSNTOA", DS1, regtag).isel(ncol=colinds).squeeze()
+FSUTOA = xr_getvar("FSUTOA", DS1, regtag).isel(ncol=colinds).squeeze()
+FSUTOAC = xr_getvar("FSUTOAC", DS1, regtag).isel(ncol=colinds).squeeze()
+TGCLDIWP = xr_getvar("TGCLDIWP", DS1, regtag).isel(ncol=colinds).squeeze()
+FSDSC = xr_getvar("FSDSC", DS1, regtag).isel(ncol=colinds).squeeze()
+SOLIN = xr_getvar("SOLIN", DS1, regtag).isel(ncol=colinds).squeeze()
+CLDTOT = xr_getvar("CLDTOT", DS1, regtag).isel(ncol=colinds).squeeze()
+CLDLOW = xr_getvar("CLDLOW", DS1, regtag).isel(ncol=colinds).squeeze()
+FSNS = xr_getvar("FSNS", DS1, regtag).isel(ncol=colinds).squeeze()
+FSNSC = xr_getvar("FSNSC", DS1, regtag).isel(ncol=colinds).squeeze()
+SWCFS = FSNS-FSNSC
+print('range SWCFS', SWCFS.min().values,SWCFS.max().values)
+CLALB = -SWCF/(FSNTOAC - (FSNTOA+FSUTOA))
+CLALB2 = (SOLIN+SWCF)/SOLIN
+CLALB3 = (-SWCF)/(SOLIN)
+D4 = FSNTOAC - (FSNTOA+FSUTOA)
+D4A = FSNTOAC - SOLIN
+PJRD = FSNTOA + FSUTOA
+PJRDF = PJRD/SOLIN
+D5A = FSNTOAC+FSUTOAC # should be SOLIN
+D5B = D5A - FSDSC # should be reduction in solar beam absent cloud
+CLALB4 = -SWCF/(SOLIN - FSNTOAC)
+CLALB5 = -SWCF/(SOLIN)#*CLDLOW/100.)
+CLALB6 = -SWCF/FSDSC
+CLALB6 = CLALB6.rename('CLALB')
+CLALB6.attrs['long_name'] = 'Cloud Albedo estimate'
+CLALB6.attrs['units'] = '1'
+CLDX = CLDLOW
+CLALB6C = CLALB6/(CLDX/100.)
+print('range D5A',D5A.min().values,D5A.max().values)
+print('range D5B',D5B.min().values,D5B.max().values)
+print('range SOLIN',SOLIN.min().values,SOLIN.max().values)
+print('range PJRD',PJRD.min().values,PJRD.max().values)
+print('range CLDTOT',CLDTOT.min().values,CLDTOT.max().values)
+print('range CLDLOW',CLDLOW.min().values,CLDLOW.max().values)
+print('range PJRDF',PJRDF.min().values,PJRDF.max().values)
+print('range SWCF', SWCF.min().values,SWCF.max().values)
+print('range FSNTOAC', FSNTOAC.min().values,FSNTOAC.max().values)
+print('range FSNTOA', FSNTOA.min().values,FSNTOA.max().values)
+print('range FSUTOA', FSUTOA.min().values,FSUTOA.max().values)
+print('range FSDSC', FSDSC.min().values,FSDSC.max().values)
+print('range CLALB',CLALB.min().values,CLALB.max().values)
+print('range CLALB2',CLALB2.min().values,CLALB2.max().values)
+print('range CLALB3',CLALB3.min().values,CLALB3.max().values)
+print('range CLALB4',CLALB4.min().values,CLALB4.max().values)
+print('range CLALB5',CLALB5.min().values,CLALB5.max().values)
+print('range D4',D4.min().values,D4.max().values)
+print('range D4A',D4A.min().values,D4A.max().values)
+fig, axes = plt.subplots(ncols=3
+                        ,gridspec_kw={'width_ratios': [1, 1, 1]}
+                        ,subplot_kw={'projection': ccrs.PlateCarree()}
+                        ,figsize=(16,5)
+                        )
+clevs = dlevs = None
+#xr_cshplot(CLALB4, lonsub, latsub,ax=axes[0],clevs=clevs,title="CLALB4")
+#xr_cshplot(CLALB5, lonsub, latsub,ax=axes[1],clevs=clevs,ylabels=False,title="CLALB5")
+#xr_cshplot(CLDLOW, lonsub, latsub,ax=axes[2],clevs=dlevs,cmap=dmap,title="CLDLOW")
+#plt.savefig('test_'+Vname+'.jpg',format='jpg')
+#plt.show()
+xr_cshplot(CLALB6, lonsub, latsub,ax=axes[0],clevs=clevs,title="Cloud Albedo (est for low cloud)")
+xr_cshplot(CLALB6C, lonsub, latsub,ax=axes[1],clevs=clevs,title="Cloud Albedo (div by CLDX)")
+pm2 = ((CLDX > 10) & (TGCLDIWP < 0.03) )#[0] # select a subregion
+#pmask = (lon > -999) # select all points
+xxx = pm2.load()
+colinds2 = np.where(xxx.values)[0]
+print('xxx',colinds.shape, colinds2.shape)
+CLALB6C2 = CLALB6C.isel(ncol=colinds2).squeeze()
+lon2 = lonsub[colinds2]
+lat2 = latsub[colinds2]
+xr_cshplot(CLALB6C2, lon2, lat2, ax=axes[2],clevs=[0.,0.2,0.4,0.6,0.8,1.0],title="Cloud Albedo (div by CLDX > 0.1)")
+#xr_cshplot(D5B, lonsub, latsub,ax=axes[1],clevs=clevs,ylabels=False,title="D5B")
+#xr_cshplot(CLALB6, lonsub, latsub,ax=axes[2],clevs=dlevs,cmap=dmap,title="CLALB6")
+#plt.savefig('test_'+Vname+'.jpg',format='jpg')
+plt.show()
 ```
 
 ```python

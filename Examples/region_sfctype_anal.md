@@ -5,11 +5,11 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.13.8
+      jupytext_version: 1.14.0
   kernelspec:
-    display_name: Python [conda env:pjrpy3] *
+    display_name: Python [conda env:.conda-pjrpy3]
     language: python
-    name: conda-env-pjrpy3-py
+    name: conda-env-.conda-pjrpy3-py
 ---
 
 ```python
@@ -89,9 +89,12 @@ IF = DS['ICEFRAC']
 lat = DS['lat'].values#[0,:]
 lon = DS['lon'].values#[0,:]
 print ('lonrange', lon.min(), lon.max())
+print ('LF',LF)
 
 #print('name',nameList)
 #print('reg',reg)
+#i = 3
+#if 1 == 1:
 for i in range(0,len(nameList)):
     print(' ')
     print('processing ',nameList[i])
@@ -120,6 +123,8 @@ for i in range(0,len(nameList)):
     print ('lonrange', loni.min(), loni.max())
 
     ind = np.where((lat >= ymin) & (lat <= ymax) & (loni >= xleft) & (loni <= xright))
+    #ind = np.where(lat > -999)
+    #print('GLOBAL KLUDGE')
     # add the indexlist for this region as a coordinate with abbreviated name
     mask = loni > 999.# boolian array all false
     mask[ind] = True
