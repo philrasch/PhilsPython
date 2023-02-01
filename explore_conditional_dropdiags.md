@@ -61,7 +61,7 @@ lat = DS1['lat'+regtag]#.isel(time=0)
 print('lat',lat.shape,lat.min().values,lat.max().values)
 
 pmask = ((lon > 220) & (lon < 250) & (lat > 15) & (lat < 35))#[0] # select a subregion
-#pmask = (lon > -999) # select all points
+pmask = (lon > -999) # select all points
 xxx = pmask.load()
 colinds = np.where(xxx.values)[0]
 #print('xxx',type(colinds), colinds)
@@ -85,8 +85,10 @@ lat_h=np.arange(np.floor(latsub.min().values),np.ceil(latsub.max().values+dinc),
 xoutm,youtm=np.meshgrid(lon_h,lat_h)
 print('xxx',xoutm.shape,xoutm.min(),xoutm.max(),youtm.min(),youtm.max())
 area = xr_getvar('area',DS1,regtag=regtag).isel(ncol=colinds)
+# weights for horizontal (area) averages
 wtsh = area.fillna(0)
 #print('wtsh',wtsh)
+# weights for 3D fields (mass and area weights) DPOG is delta-p over g
 DPOG1 = xr_getvar('DPOG',DS1,regtag=regtag).isel(ncol=colinds)
 weights1 = wtsh*DPOG1
 weights1 = weights1.fillna(0)
@@ -101,8 +103,7 @@ weights2 = weights2.fillna(0)
 ```python
 Varlist = np.array(['T','Q','CLOUD','CLDLIQ','ICWMR','CLDICE','RELHUM','NUMICE','NUMLIQ','Mass_bc'])
 #                    RESTOM','FLNT','FSNT','TS','TMQ','PRECT','AEROD_v','CLDLOW','CLDTOT','LWCF','SWCF','TGCLDIWP','TGCLDLWP','SHFLX','LHFLX','PBLH','PCONVT','PRECC','PRECS'])
-# Varlist = np.array(['T'])
-#Varlist = np.array(['RESTOM','LWCF','SWCF','FLNT','FSNT'])
+Varlist = np.array(['T'])
 
 for Vname in Varlist:
     print()
@@ -175,7 +176,7 @@ weights = area.fillna(0)
 Varlist = np.array(['RESTOM','FLNTC','FLNT','FSNTC','FSNT','TS','TMQ','PRECT','AEROD_v','CLDLOW','CLDTOT','LWCF','SWCF','TGCLDIWP','TGCLDLWP',
                     'SHFLX','LHFLX','PBLH','PCONVT','PRECC','PRECS','PS'])
 #Varlist = np.array(['TS','TMQ','PRECT'])
-#Varlist = np.array(['RESTOM','LWCF','SWCF','FLNT','FSNT'])
+Varlist = np.array(['RESTOM','LWCF','SWCF','FLNT','FSNT'])
 #Varlist = np.array(['PS'])
 Varlist = np.sort(Varlist)
 
@@ -213,7 +214,7 @@ for Vname in Varlist:
 
 ```
 
-**lat/lon plots from eta levels**
+**lat/lon plots selected from eta levels**
 
 ```python
 fig, axes = plt.subplots(ncols=3
@@ -305,14 +306,15 @@ plt.show()
 
 ```python
 # demonstrate the difference between numpy indexing and xarray indexing
-print('indi',indi.shape)
-print('llmin',llmin.shape)
-X = Z3.values
-print('X.shape',X.shape)
-Xnew = X[indi,llmin]
-print('Xnew shape',Xnew.shape)
-print('Z3 version',Z3[indi,llmin].shape)
-print('Z3val version',Z3.values[indi,llmin].shape)
+if False:  # turned off because the xarray indexing uses a lot of memory
+    print('indi',indi.shape)
+    print('llmin',llmin1.shape)
+    X = Z3.values
+    print('X.shape',X.shape)
+    Xnew = X[indi,llmin1]
+    print('Xnew shape',Xnew.shape)
+    print('Z3 version',Z3[indi,llmin1].shape)
+    print('Z3val version',Z3.values[indi,llmin1].shape)
 ```
 
 ```python
