@@ -1032,7 +1032,7 @@ def xr_getvar(Varname, DS, regtag=None):
             #print('VarI',VarI)
             #print('VarI col 0',VarI[0,0,:].values)
             #print('PS',DS['PS'+regtag])
-            print('using this variable is a template for DPOG',nm3dv)
+            print('using this variable as a template for DPOG',nm3dv)
             Var = DS[nm3dv+regtag].copy()
             Var = Var.rename(Varname)
             #print('Var',Var)

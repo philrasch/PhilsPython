@@ -7,9 +7,9 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.14.4
   kernelspec:
-    display_name: Python [conda env:pjrpy] *
+    display_name: pjrpy3
     language: python
-    name: conda-env-pjrpy-py
+    name: pjrpy3
 ---
 
 ```python
@@ -58,8 +58,8 @@ if ('cori' in host):
     indir = '/global/cscratch1/sd/ogaruba/acme_scratch/cori-haswell/archive/E1850C5CLM45CNMC.ne30_oECv3_3/atm/hist/E1850C5CLM45CNMC.ne30_oECv3_3.cam.h0.0049-06.nc'
     indir = os.path.expanduser('~/NetCDF_Files/vd05_ANN_climo.nc')
 else:
-    indir = os.path.expanduser('~/Desktop/NetCDF_Files/vd05_JJA_climo.nc')
-    indir = os.path.expanduser('~/Desktop/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
+    indir = os.path.expanduser('~/Desktop/NetCDF_Files/vd05_ANN_climo.nc')
+    #indir = os.path.expanduser('~/Desktop/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc')
 print(indir)
 #print('exists',os.path.exists(indir))
 DS = xr.open_mfdataset(indir).chunk({'time': 20})
