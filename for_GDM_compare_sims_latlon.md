@@ -268,32 +268,82 @@ plt.show()
 ```
 
 ```python tags=[]
-# sample multilevel field on hybrid levels
+# sample multilevel field at level nearest PBLH
 fig, axes = setfig3b1x1()
 
-def getvarDSM(Varname,fstring,case_start,case_end):
-    """xxx
-    """
-    ind = fstring % (case_start,Varname,case_end)
-    #print('opening',ind1)
-    DS = xr.open_mfdataset(ind)
-    Var = xr_getvar(Varname,DS)
-    VM = Var.mean(dim='time',keep_attrs=True)
-    return VM;
+PBLH = getvarDSM('PBLH', fstring1, case_start1, case_end1)
+Z3 = getvarDSM('Z3', fstring1, case_start1, case_end1)
+#P3 = getvarDSM('P3', fstring1, case_start1, case_end1)
+PHIS = getvarDSM('PHIS', fstring1, case_start1, case_end1)
 
-mylev=850.
-FREQL = getvarDSM('FREQL', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')
-CLOUD = getvarDSM('CLOUD', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')/100.
+# find the 1D array of indices closest to the PBLH
+# I think Z3 is height above sea-level, and PBLH is height above surface
+Z3D = Z3 - PHIS/9.8 - PBLH
+#Z3D = Z3 - PBLH
+print('Z3D shape',np.shape(Z3D.values))
+llmin1 =  np.abs(Z3D.values).argmin(axis=0)
+print('llmin',np.shape(llmin1))
+i = 12
+j = 12
+print('PBLH',PBLH[i,j].values)
+print('PHIS',PHIS[i,j].values/9.8)
+print('Z3ij',Z3[:,i,j].values)
+print('192x288',192*288)
+print('min', llmin1[i,j],Z3D[llmin1[i,j],i,j].values)
+#l2min = np.unravel_index(np.abs(Z3D.values).argmin(), Z3D.values.shape)
+data = Z3D.values
+lind = llmin1.flatten()
+print('lind',np.shape(lind),lind[0:3])
+indi = np.arange(0,len(lind))
+print('indi',np.shape(indi))
+ni,nj,nk = np.shape(data)
+print('ni,nj,nk',ni,nj,nk)
+datas = data.reshape((ni,nj*nk))
+print('datas',np.shape(datas))
+dataz = datas[lind,indi]
+print('dataz',np.shape(dataz))
+datazr = dataz.reshape((nj,nk))
+print('datazr shape ij',datazr.shape, datazr[i,j])
+#datam = data[llmin1,:,:]
+#print('datam',datam.shape)
+if False:
+    #print(PBLH[217].values,Z3[217,:].values,PHIS[217].values)
+    #llminp1 = llmin+1
+    indi = np.arange(0,len(llmin1))
+    # extract the pressure at that index
+    # get data out because numpy array indexing differs from xarray indexing
+    pblvals1 = P3.values[indi,llmin1]
+    NUMLIQ = getvarDSM('NUMLIQ', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')*1.e-6
+    ICNUMLIQ = NUMLIQ/(CLOUD+1.e-2)
+    ICNUMLIQ = ICNUMLIQ.rename('ICNUMLIQ')
+    ICNUMLIQ.attrs['long_name'] = 'approx in-cloud number conc @850hPa'
+    ICNUMLIQ.attrs['units'] = '#/cc'
 
-NUMLIQ = getvarDSM('NUMLIQ', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')*1.e-6
-ICNUMLIQ = NUMLIQ/(CLOUD+1.e-2)
-ICNUMLIQ = ICNUMLIQ.rename('ICNUMLIQ')
-ICNUMLIQ.attrs['long_name'] = 'approx in-cloud number conc @850hPa'
-ICNUMLIQ.attrs['units'] = '#/cc'
+    xr_llhplot(ICNUMLIQ, ax=axes)#,clevs=clevs,title=pref1+sV1A)
+    #plt.savefig(pref1+'_'+Varname+'.jpg',format='jpg',dpi=300)
+    plt.show()
 
-xr_llhplot(ICNUMLIQ, ax=axes)#,clevs=clevs,title=pref1+sV1A)
-#plt.savefig(pref1+'_'+Varname+'.jpg',format='jpg',dpi=300)
-plt.show()
+```
+
+```python
+# example of locating max of a multidimensional array
+a = np.array([[1,2,3],[4,3,1]])
+a = np.array([[1,4,3,np.nan],[np.nan,4,3,1]])
+af = a.flatten()
+afd = af[np.isfinite(af)]
+print('a',a)
+print('len a, af, afd',len(a), len(af), len(afd))
+print('afd max',afd.max())
+i,j = np.where(a==a.max())
+print('i,j',i,j)
+i,j = np.where(a==afd.max())
+print('i,j',i,j)
+a[i,j]
+```
+
+```python
+s = np.arange(10)
+s.reshape(2,5)
 
 ```
 
