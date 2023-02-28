@@ -79,33 +79,33 @@ case_end2 = ".y1-19.nc"
 pref2='CESMcontrol'
 fstring2 ='%s%s%s' 
 
-#"""
+if True:
 
-case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.y1-5.FORCING.nc"
-case_end1 = ""
-pref1='E3SM_CN600'
-fstring1 ='%s%.0s%.0s' 
+    case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.y1-5.FORCING.nc"
+    case_end1 = ""
+    pref1='E3SM_CN600'
+    fstring1 ='%s%.0s%.0s' 
 
-case_start2 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_CNTL_remapped/20220930.v2.LR.F2010.E1_CNTL.eam.h0.y1-14.FORCING.nc"
-case_end2 = ""
-fstring2 ='%s%.0s%.0s' 
-pref2='E3SMcontrol'
+    case_start2 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_CNTL_remapped/20220930.v2.LR.F2010.E1_CNTL.eam.h0.y1-14.FORCING.nc"
+    case_end2 = ""
+    fstring2 ='%s%.0s%.0s' 
+    pref2='E3SMcontrol'
 
-#case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.1-11"
-case_start1 = "/scratch2/ec2-user/PJR/E3SM/20221123.v2.LR.F2010.E1_R1-3_CDNC2000/fv192x288/20221123.v2.LR.F2010.E1_R1-3_CDNC2000.eam.h0.1-11."
-case_end1 = ".nc"
-pref1='E3SM_CN2000'
-fstring1 ='%s%.0s%.0s' 
-fstring1 ='%s%s%s' 
+    #case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.1-11"
+    case_start1 = "/scratch2/ec2-user/PJR/E3SM/20221123.v2.LR.F2010.E1_R1-3_CDNC2000/fv192x288/20221123.v2.LR.F2010.E1_R1-3_CDNC2000.eam.h0.1-11."
+    case_end1 = ".nc"
+    pref1='E3SM_CN2000'
+    fstring1 ='%s%.0s%.0s' 
+    fstring1 ='%s%s%s' 
 
-#case_start2 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_CNTL_remapped/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14"
-case_start2 = "/scratch2/ec2-user/PJR/E3SM/20220930.v2.LR.F2010.E1_CNTL/fv192x288/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14."
-case_end2 = ".nc"
-fstring2 ='%s%.0s%.0s' 
-fstring2 ='%s%s%s' 
-pref2='E3SMcontrol'
+    #case_start2 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_CNTL_remapped/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14"
+    case_start2 = "/scratch2/ec2-user/PJR/E3SM/20220930.v2.LR.F2010.E1_CNTL/fv192x288/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14."
+    case_end2 = ".nc"
+    fstring2 ='%s%.0s%.0s' 
+    fstring2 ='%s%s%s' 
+    pref2='E3SMcontrol'
 
-#"""
+
 
 Varname='<Varname>'
 ind1 = fstring1 % (case_start1,Varname,case_end1)
@@ -214,6 +214,7 @@ for Varname in Varlist:
         if plconf == '3-1x1':
             
             fig, axes = setfig3b1x1()
+            print('V1XXX',V1)
             xr_llhplot(V1, ax=axes,clevs=clevs,title=pref1+sV1A)
             plt.savefig(pref1+'_'+Varname+'.jpg',format='jpg',dpi=300)
             plt.show()
@@ -232,6 +233,67 @@ for Varname in Varlist:
 
         
     print('field processing complete')
+
+```
+
+```python tags=[]
+# sample multilevel field on hybrid levels
+fig, axes = setfig3b1x1()
+
+def getvarDSM(Varname,fstring,case_start,case_end):
+    """getvar DSM
+       get variable from file specifying the formatting
+    """
+    ind = fstring % (case_start,Varname,case_end)
+    #print('opening',ind1)
+    DS = xr.open_mfdataset(ind)
+    Var = xr_getvar(Varname,DS)
+    VM = Var.mean(dim='time',keep_attrs=True)
+    return VM;
+
+mylev=850.
+FREQL = getvarDSM('FREQL', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')
+CLOUD = getvarDSM('CLOUD', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')/100.
+
+NUMLIQ = getvarDSM('NUMLIQ', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')*1.e-6
+ICNUMLIQ = NUMLIQ/(CLOUD+1.e-2)
+ICNUMLIQ = ICNUMLIQ.rename('ICNUMLIQ')
+ICNUMLIQ.attrs['long_name'] = 'approx in-cl number @850hPa hybsfc'
+ICNUMLIQ.attrs['units'] = '#/cc'
+
+xr_llhplot(ICNUMLIQ, ax=axes)#,clevs=clevs,title=pref1+sV1A)
+#plt.savefig(pref1+'_'+Varname+'.jpg',format='jpg',dpi=300)
+plt.show()
+
+```
+
+```python tags=[]
+# sample multilevel field on hybrid levels
+fig, axes = setfig3b1x1()
+
+def getvarDSM(Varname,fstring,case_start,case_end):
+    """xxx
+    """
+    ind = fstring % (case_start,Varname,case_end)
+    #print('opening',ind1)
+    DS = xr.open_mfdataset(ind)
+    Var = xr_getvar(Varname,DS)
+    VM = Var.mean(dim='time',keep_attrs=True)
+    return VM;
+
+mylev=850.
+FREQL = getvarDSM('FREQL', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')
+CLOUD = getvarDSM('CLOUD', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')/100.
+
+NUMLIQ = getvarDSM('NUMLIQ', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')*1.e-6
+ICNUMLIQ = NUMLIQ/(CLOUD+1.e-2)
+ICNUMLIQ = ICNUMLIQ.rename('ICNUMLIQ')
+ICNUMLIQ.attrs['long_name'] = 'approx in-cloud number conc @850hPa'
+ICNUMLIQ.attrs['units'] = '#/cc'
+
+xr_llhplot(ICNUMLIQ, ax=axes)#,clevs=clevs,title=pref1+sV1A)
+#plt.savefig(pref1+'_'+Varname+'.jpg',format='jpg',dpi=300)
+plt.show()
 
 ```
 
