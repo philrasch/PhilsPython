@@ -6,11 +6,11 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.0
+      jupytext_version: 1.14.4
   kernelspec:
-    display_name: Python [conda env:.conda-pjrpy3]
+    display_name: pjrpy3
     language: python
-    name: conda-env-.conda-pjrpy3-py
+    name: pjrpy3
 ---
 
 ```python
@@ -29,18 +29,13 @@ Varlist = np.array(['T','Q','CLOUD','CLDLIQ','ICWMR','CLDICE','RELHUM','NUMICE',
 
 Varname = 'TS' # Varlist[0]
 
+"""
 case_start1 = "/home/jupyter-haruki/work/CESM_MCB/Fixed_SST/"
 case_start1 = "/scratch2/PJR/haruki_workdir/CESM_MCB/Fixed_SST/"
 case_end1 = "Fixed_SST.cam.h0."+Varname+".y1-19.nc"
 ind1 = case_start1+case_end1
 DS1 = xr.open_mfdataset(ind1)
-
-
-Var1a = DS1[Varname]
-Var1am = Var1a.mean(dim='time')
 DS1 = center_time(DS1)
-Var1 = DS1[Varname]
-#print('xxx',Var1)
 
 case_start2 = "/home/jupyter-haruki/work/CESM_MCB/MCB_R1R2R3_CN375cm/" 
 case_start2 = "/scratch2/PJR/haruki_workdir/CESM_MCB/MCB_R1R2R3_CN600cm/"
@@ -48,6 +43,28 @@ case_end2 = "MCB_R1R2R3_CN600cm.cam.h0."+Varname+".y1-10.nc"
 ind2 = case_start2+case_end2
 DS2 = xr.open_mfdataset(ind2)
 DS2 = center_time(DS2)
+"""
+
+caseid1 = "F2010_maint2.0_MCB-SSLT-EM_CNTL_test01"
+case_start1 = "/compyfs/d3x345/climo_files/"+caseid1+"/"
+case_end1 = caseid1+"_01_200401_200401_climo_fv192x288.nc"
+#case_end1 = caseid1+"_01_200401_200401_climo.nc"
+ind1 = case_start1+case_end1
+#ind1 = '/compyfs/d3x345/vd05_ANN_climo.nc'
+#print('ind1',ind1)
+DS1 = xr.open_mfdataset(ind1)
+#print('DS1',DS1)
+#DS1 = center_time(DS1)
+
+caseid2 = "F2010_maint2.0_MCB-SSLT-EM_CNTL_test01"
+case_start2 = "/compyfs/d3x345/climo_files/"+caseid1+"/"
+case_end2 = caseid2+"_01_200401_200401_climo_fv192x288.nc"
+ind2 = case_start2+case_end2
+DS2 = xr.open_mfdataset(ind2)
+#DS2 = center_time(DS2)
+
+Var1 = DS1[Varname]
+#print('xxx',Var1)
 Var2 = DS2[Varname]
 #print('yyy',Var2)
 
@@ -171,6 +188,14 @@ case_start2 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/20220930.v2.LR.F2010.E1_CNT
 case_end2 = ""
 pref2='control'
 
+caseid1 = "F2010_maint2.0_MCB-SSLT-EM_CNTL_test01"
+case_start1 = "/compyfs/d3x345/climo_files/"+caseid1+"/"+caseid1+"_01_200401_200401_climo_fv192x288.nc"
+case_end1 = "" 
+
+caseid2 = "F2010_maint2.0_MCB-SSLT-EM_CNTL_test01"
+case_start2 = "/compyfs/d3x345/climo_files/"+caseid2+"/"+caseid2+"_01_200401_200401_climo_fv192x288.nc"
+case_end2 = ""
+
 for Varname in Varlist:
     print()
     print('-------------------------------'+Varname)
@@ -179,7 +204,7 @@ for Varname in Varlist:
     ind1 = case_start1
     print('opening',ind1)
     DS1 = xr.open_mfdataset(ind1)
-    DS1 = center_time(DS1)
+    #DS1 = center_time(DS1)
     Var1 = xr_getvar(Varname,DS1)
     V1 = Var1.mean(dim='time',keep_attrs=True)
 
@@ -188,7 +213,7 @@ for Varname in Varlist:
     ind2 = case_start2
     print('opening',ind2)
     DS2 = xr.open_mfdataset(ind2)
-    DS2 = center_time(DS2)
+    #DS2 = center_time(DS2)
     Var2 = xr_getvar(Varname,DS2)
     #print('yyy',Var2)
     V2 = Var2.mean(dim='time',keep_attrs=True)

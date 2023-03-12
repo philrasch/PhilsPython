@@ -500,7 +500,8 @@ def plotZMf(data, x, y, plotOpt=None, modelLevels=None, surfacePressure=None, ax
 # choose a colormap if not supplied
     cmap = plotOpt.get("cmap")
     if cmap is None:
-        cmap = mpl.cm.get_cmap()
+        #cmap = mpl.cm.get_cmap()
+        cmap = plt.get_cmap()
     cmap = copy.copy(cmap)
     norm = mpl.colors.BoundaryNorm(clevs,cmap.N)
 
@@ -941,6 +942,57 @@ def great_circle(lon1, lat1, lon2, lat2,n=None):
     rad = 6371. 
     return lon,lat
 
+# a few useful code segments for manipulating xarray Datasets and DataArrays
+# CODE from ESA CCI project at https://github.com/CCI-Tools/cate
+
+from typing import Optional, Sequence, Union, Tuple
+
+def get_lon_dim_name_impl(ds: Union[xr.Dataset, xr.DataArray]) -> Optional[str]:
+    """
+    Get the name of the longitude dimension.
+    :param ds: An xarray Dataset
+    :return: the name or None
+    """
+    return _get_dim_name(ds, ['lon', 'longitude', 'long'])
+
+
+def get_lat_dim_name_impl(ds: Union[xr.Dataset, xr.DataArray]) -> Optional[str]:
+    """
+    Get the name of the latitude dimension.
+    :param ds: An xarray Dataset
+    :return: the name or None
+    """
+    return _get_dim_name(ds, ['lat', 'latitude'])
+
+
+def _get_dim_name(ds: Union[xr.Dataset, xr.DataArray], possible_names: Sequence[str]) -> Optional[str]:
+    for name in possible_names:
+        if name in ds.dims:
+            return name
+    return None
+
+def _normalize_lat_lon(ds: xr.Dataset) -> xr.Dataset:
+    """
+    Rename variables named 'longitude' or 'long' to 'lon', and 'latitude' to 'lon'.
+    :param ds: some xarray dataset
+    :return: a normalized xarray dataset, or the original one
+    """
+    lat_name = get_lat_dim_name_impl(ds)
+    lon_name = get_lon_dim_name_impl(ds)
+
+    name_dict = dict()
+    if lat_name and 'lat' not in ds:
+        name_dict[lat_name] = 'lat'
+
+    if lon_name and 'lon' not in ds:
+        name_dict[lon_name] = 'lon'
+
+    if name_dict:
+        ds = ds.rename(name_dict)
+
+    return ds
+# ENDOF CODE FROM ESA CCI
+
 def xr_getvar(Varname, DS, regtag=None):
     """get variable Varname from xarray dataset DS
        some variables are derived from others
@@ -1032,7 +1084,7 @@ def xr_getvar(Varname, DS, regtag=None):
             #print('VarI',VarI)
             #print('VarI col 0',VarI[0,0,:].values)
             #print('PS',DS['PS'+regtag])
-            print('using this variable is a template for DPOG',nm3dv)
+            print('using this variable as a template for DPOG',nm3dv)
             Var = DS[nm3dv+regtag].copy()
             Var = Var.rename(Varname)
             #print('Var',Var)
@@ -1198,7 +1250,12 @@ def xr_getvar(Varname, DS, regtag=None):
     except KeyError:  # variable not a derived field or on DS
         estr = Varname+regtag+' is not defined or found in DS'
         raise UserWarning(estr)
-    else:    
+    else:
+        if not 'long_name' in Var.attrs:
+            if 'standard_name' in Var.attrs:
+                Var.attrs['long_name'] = Var.attrs['standard_name']
+            else:
+                Var.attrs['long_name'] = Varname
         return Var
 
 def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None):
@@ -1227,7 +1284,8 @@ def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=Non
     #print('clevs',clevs)
     if cmap is None:
         #print('aaa, grabbing cmap default')
-        cmap = mpl.cm.get_cmap()
+        #cmap = mpl.cm.get_cmap()
+        cmap = plt.get_cmap()
         #print('bbb',cmap.N)
     #print('cmap',cmap)
     extend = 'both'
@@ -1283,7 +1341,8 @@ def xr_llhplot(xrVar, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, 
     #print('clevs',clevs)
     if cmap is None:
         #print('aaa, grabbing cmap default')
-        cmap = mpl.cm.get_cmap()
+        #cmap = mpl.cm.get_cmap()
+        cmap = plt.get_cmap()
         #print('bbb',cmap.N)
     #print('cmap',cmap)
     extend = 'both'
@@ -1393,15 +1452,27 @@ def center_time(DS1):
     correct the time coordinate in DS1 to represent the center of the time bounds
  
     """
-    # the time coord is registered at the end of the time averaging interval
-    # determine the midpoint of the interval and the length of the interval, 
+    # the time coord is often registered at the end of the time averaging interval
+    # reset to the midpoint of the interval
     time = DS1['time'].copy()
     #print('time',time)
+    #print('xxx',time.values)
     bndname = time.attrs['bounds']
     time_bnds = DS1[bndname]
-    tb = time_bnds.values
-    tint = (tb[:,1]-tb[:,0])
-    tbm = tint/2. + tb[:,0]
+    tbdims = time_bnds.dims
+    tbd_name = ''
+    for tbd in tbdims:
+        if tbd_name != time:
+            tbd_name = tbd
+    #print('tbd_name',tbd_name)
+    #print('tbdims',tbdims)
+    # if no bounds, then do nothing
+    if tbd_name == '':
+        return DS1
+    #tb = time_bnds.values
+    #print('time_bnds',time_bnds)
+    tbm = time_bnds.mean(dim=tbd_name).values
+    #print('yyy',tbm)
     DS1.coords["time"] = tbm
     DS1['time'].attrs['long_name'] = 'time'
     DS1['time'].attrs['bounds'] = 'time_bnds'

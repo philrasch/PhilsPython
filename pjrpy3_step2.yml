@@ -1,0 +1,22 @@
+#name: pjrpy_v5
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - dask
+  - xarray
+  - conda-forge::netcdf4
+  - matplotlib
+  - bottleneck
+  - nb_conda_kernels
+  - jupyterlab
+  - jupytext
+  - nodejs
+  - regionmask
+  - nc-time-axis
+  - pygeos
+  - cartopy
+  - nco
+  - pynco
+  - pipx
+ 
