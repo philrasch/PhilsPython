@@ -8,8 +8,11 @@ import numpy as np
 import string
 import copy
 import cartopy.crs as ccrs
+import ipynbname
+import platform
 import xarray as xr
 import os
+import pwd
 import sys
 import glob
 #import cdms2
@@ -1251,6 +1254,8 @@ def xr_getvar(Varname, DS, regtag=None):
         estr = Varname+regtag+' is not defined or found in DS'
         raise UserWarning(estr)
     else:
+        if not 'units' in Var.attrs:
+            Var.attrs['units'] = "?"
         if not 'long_name' in Var.attrs:
             if 'standard_name' in Var.attrs:
                 Var.attrs['long_name'] = Var.attrs['standard_name']
@@ -1319,7 +1324,7 @@ def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=Non
     ax.coastlines(linewidth=1,color='blue')
     return
 
-def xr_llhplot(xrVar, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None):
+def xr_llhplot(xrVar, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None, cbartitle=None):
     """xr_llhplot xarray lat lon horizontal plot
     """
     #print(' entering xr_llhplot', xrVar)
@@ -1369,10 +1374,13 @@ def xr_llhplot(xrVar, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, 
                      norm=norm, cmap=cmap,
                      extend=extend, transform=ccrs.PlateCarree())
 
+    if cbartitle is None:
+        cbartitle = xrVar.long_name
+        
     # Add colorbar to plot
     cb = plt.colorbar(
         pl, orientation='horizontal',ticks=clevs,ax=cax,
-        label='%s (%s)'%(xrVar.long_name, xrVar.units), pad=0.1
+        label='%s (%s)'%(cbartitle, xrVar.units), pad=0.1
     )
     if not title is None:
         ax.set_title(title)
@@ -1511,6 +1519,57 @@ def xrspawn(xrVar, newname,data=None,**kwargs):
 
     return newVar
 
+def get_username():
+    # next line gets user real name
+    # print('uuuu',pwd.getpwuid(os.getuid())[4])
+    return pwd.getpwuid(os.getuid())[0]
+
+def add_prov(infile):
+    """Usage: add_prov(infile)
+    adds some provanence to the metadata of a PDF file
+    """
+    from pypdf import PdfReader, PdfWriter
+
+
+    reader = PdfReader(infile)
+    writer = PdfWriter()
+
+    writer.append_pages_from_reader(reader)
+    metadata = reader.metadata
+    writer.add_metadata(metadata)
+
+    # Write your custom metadata here:
+    #xxx = os.environ.get('HOST')
+    host = platform.node()
+    #print('host',host)
+
+    try:
+        get_ipython
+        nb_fname = ipynbname.name()
+        nb_path = ipynbname.path()
+        #print('nbname',nb_fname,nb_path)
+        scriptname = nb_fname
+    except:
+        scriptname = os.path.basename(sys.argv[0])
+        #print('sc2',scriptname)
+
+    user = get_username()
+    writer.add_metadata({"/Title": "Script:"+scriptname+" on:"+host})
+    writer.add_metadata({"/Author": user})
+    #writer.addMetadata({
+    #    '/Author': author,
+    #    '/Creator': creator,
+    #    '/Producer': producer,
+    #    '/Subject': subject
+    #    })
+
+    newfile=infile+"new"
+    with open(newfile, "wb") as fp:
+        writer.write(fp)
+        fp.close()
+    os.rename(infile,infile+"_orig")
+    os.rename(newfile, infile)
+    os.remove(infile+"_orig")
+
 print ("pjr3.py complete")
-#help(findNiceContours)
 
