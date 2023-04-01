@@ -15,6 +15,7 @@ import os
 import pwd
 import sys
 import glob
+from pypdf import PdfReader, PdfWriter
 #import cdms2
 #import cdutil
 from scipy.interpolate import interp1d
@@ -1528,7 +1529,6 @@ def add_prov(infile):
 
     WARNING: when the function is invoked from a markdown version of the
     """
-    from pypdf import PdfReader, PdfWriter
 
 
     reader = PdfReader(infile)
