@@ -20,6 +20,20 @@ print(sys.version)
 ```
 
 ```python
+def setfig3b1x1 ():
+    """
+    return fig and axes for a single panel figure
+    """
+    fig, axes = plt.subplots(ncols=1,
+                             gridspec_kw={'width_ratios': [1]},
+                             subplot_kw={'projection': ccrs.Mollweide()},
+                             figsize=(6,3),
+                            )
+    fig.set_dpi(300.0)
+    return fig, axes;
+```
+
+```python
 indir = os.path.expanduser('~/NetCDF_Files/*F2010*.nc')
 #indir = os.path.expanduser('/lustre/choi040/20210920.F2010.1Nudg.ne30pg2_r05_oECv3/run/20210920.F2010.1Nudg.ne30pg2_r05_oECv3.eam.h2.2015-01-01-00000.nc')
 indir = os.path.expanduser('~/NetCDF_Files/F2010*01.nc')
@@ -107,7 +121,6 @@ plt.savefig('test.pdf',format='pdf',dpi=300)
 ```
 
 ```python
-
 infile = "test.pdf"
 add_prov(infile)
 ```

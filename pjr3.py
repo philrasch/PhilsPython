@@ -27,8 +27,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 #from netCDF4 import Dataset, date2index
 from datetime import datetime
 import matplotlib.colors as mcolors
-
-
 import warnings
 
 from pandas.plotting import register_matplotlib_converters
@@ -1527,6 +1525,8 @@ def get_username():
 def add_prov(infile):
     """Usage: add_prov(infile)
     adds some provanence to the metadata of a PDF file
+
+    WARNING: when the function is invoked from a markdown version of the
     """
     from pypdf import PdfReader, PdfWriter
 
@@ -1544,15 +1544,22 @@ def add_prov(infile):
     #print('host',host)
 
     try:
-        get_ipython
-        nb_fname = ipynbname.name()
-        nb_path = ipynbname.path()
-        #print('nbname',nb_fname,nb_path)
-        scriptname = nb_fname
+        get_ipython()
+        #print('xxx')
+        try:
+            nb_fname = ipynbname.name()
+            nb_path = ipynbname.path()
+            #print('nbname',nb_fname,nb_path)
+            scriptname = nb_fname
+        except:
+            scriptname = "my_prov can't identify scriptname with md ext on jupyter notebook"
+            # displaying the warning message 
+            warnings.warn("my_prov: Warning Message: can't identify scriptname with md extension (use ipynd file)")
     except:
         scriptname = os.path.basename(sys.argv[0])
         #print('sc2',scriptname)
 
+    #print('yyy')
     user = get_username()
     writer.add_metadata({"/Title": "Script:"+scriptname+" on:"+host})
     writer.add_metadata({"/Author": user})
