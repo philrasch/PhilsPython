@@ -29,13 +29,22 @@ def setfig3b1x1 ():
     """
     return fig and axes for a single panel figure
     """
+    plotproj = ccrs.Mollweide()
+    plotproj._threshold /= 100.
     fig, axes = plt.subplots(ncols=1,
                              gridspec_kw={'width_ratios': [1]},
-                             subplot_kw={'projection': ccrs.Mollweide()},
+                             subplot_kw={'projection': plotproj},
                              figsize=(6,3),
                             )
     fig.set_dpi(300.0)
     return fig, axes;
+
+def pltllbox(xri, yri):
+    if xri[1] < xri[0]:
+        xri[1] += 360.
+    regcx = [xri[0],xri[1],xri[1],xri[0],xri[0]]
+    regcy = [yri[0],yri[0],yri[1],yri[1],yri[0]]
+    plt.plot(regcx,regcy,color='cyan',transform=ccrs.PlateCarree())
 ```
 
 ```python
@@ -54,7 +63,7 @@ Varlist = np.array(['FLNT','FSNT','TS','PRECC','PRECL','CLDLOW','CLDTOT','LWCF',
 Varlist = np.array(['CLDLOW','TGCLDLWP','PRECL','PRECC','SWCF'])
 Varlist = np.array(['FSNT','FSNTC','FLNT','FLNTC'])
 Varlist = np.array(['SWCF','TGCLDLWP','CLDLOW'])
-Varlist = np.array(['SWCF'])
+#Varlist = np.array(['SWCF'])
 #Varlist = np.array(['OCNFRAC'])
 
 # specify regions (assume lon always specified as west, then east limit)
@@ -66,16 +75,14 @@ namereg = ['NEP','SEP','SEA','NP','SP']
 
 case_start1 = "/home/jupyter-haruki/work/CESM_MCB/MCB_R1R2R3_CN375cm/MCB_R1R2R3_CN375cm.cam.h0." 
 case_start1 = "/home/jupyter-haruki/work/CESM_MCB/MCB_R1R2R3_CN600cm/MCB_R1R2R3_CN600cm.cam.h0."
-case_start1 = "/scratch2/PJR/haruki_workdir/CESM_MCB/MCB_R1R2R3_CN600cm/MCB_R1R2R3_CN600cm.cam.h0."
-case_end1 = ".y1-10.nc"
-
-fstring1 ='%s%s%s' 
-
+case_start1 = "/e3sm_prod/phil/climo/cesm/MCB_R1R2R3_CN600cm/fv192x288/MCB_R1R2R3_CN600cm.cam.h0.1-10."
+case_end1 = ".nc"
 pref1='CESM_CN600'
+fstring1 ='%s%s%s'
 
 case_start2 = "/home/jupyter-haruki/work/CESM_MCB/Fixed_SST/Fixed_SST.cam.h0."
-case_start2 = "/scratch2/PJR/haruki_workdir/CESM_MCB/Fixed_SST/Fixed_SST.cam.h0."
-case_end2 = ".y1-19.nc"
+case_start2 = "/e3sm_prod/phil/climo/cesm/Fixed_SST/fv192x288/Fixed_SST.cam.h0.1-20."
+case_end2 = ".nc"
 pref2='CESMcontrol'
 fstring2 ='%s%s%s' 
 
@@ -92,14 +99,14 @@ if True:
     pref2='E3SMcontrol'
 
     #case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.1-11"
-    case_start1 = "/scratch2/ec2-user/PJR/E3SM/20221123.v2.LR.F2010.E1_R1-3_CDNC2000/fv192x288/20221123.v2.LR.F2010.E1_R1-3_CDNC2000.eam.h0.1-11."
+    case_start1 = "/e3sm_prod/phil/climo/e3sm/20221123.v2.LR.F2010.E1_R1-3_CDNC2000/fv192x288/20221123.v2.LR.F2010.E1_R1-3_CDNC2000.eam.h0.1-11."
     case_end1 = ".nc"
     pref1='E3SM_CN2000'
     fstring1 ='%s%.0s%.0s' 
     fstring1 ='%s%s%s' 
 
     #case_start2 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_CNTL_remapped/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14"
-    case_start2 = "/scratch2/ec2-user/PJR/E3SM/20220930.v2.LR.F2010.E1_CNTL/fv192x288/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14."
+    case_start2 = "/e3sm_prod/phil/climo/e3sm/20220930.v2.LR.F2010.E1_CNTL/fv192x288/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14."
     case_end2 = ".nc"
     fstring2 ='%s%.0s%.0s' 
     fstring2 ='%s%s%s' 
@@ -111,24 +118,25 @@ Varname='<Varname>'
 ind1 = fstring1 % (case_start1,Varname,case_end1)
 print('example string used for file open',ind1)
 
-indlf = fstring1 % (case_start1,'LANDFRAC',case_end1)
-print('indlf',indlf)
-DSLF = xr.open_mfdataset(indlf)
-lf = xr_getvar('LANDFRAC',DSLF).squeeze()
-#indof = fstring1 % (case_start1,'OCNFRAC',case_end1)
-#DSOF = xr.open_mfdataset(indof)
-#of = xr_getvar('OCNFRAC',DSOF).squeeze()
-of = 1.-lf # make ocean fraction the complement of lf (ignore ice)
-indif = fstring1 % (case_start1,'ICEFRAC',case_end1)
-DSIF = xr.open_mfdataset(indif)
-ifr = xr_getvar('ICEFRAC',DSIF).squeeze()
+if False:
+    indlf = fstring1 % (case_start1,'LANDFRAC',case_end1)
+    print('indlf',indlf)
+    DSLF = xr.open_mfdataset(indlf)
+    lf = xr_getvar('LANDFRAC',DSLF).squeeze()
+    #indof = fstring1 % (case_start1,'OCNFRAC',case_end1)
+    #DSOF = xr.open_mfdataset(indof)
+    #of = xr_getvar('OCNFRAC',DSOF).squeeze()
+    of = 1.-lf # make ocean fraction the complement of lf (ignore ice)
+    indif = fstring1 % (case_start1,'ICEFRAC',case_end1)
+    DSIF = xr.open_mfdataset(indif)
+    ifr = xr_getvar('ICEFRAC',DSIF).squeeze()
 
 
 for Varname in Varlist:
     print()
     print('-------------------------------'+Varname)    
     ind1 = fstring1 % (case_start1,Varname,case_end1)
-    #print('opening',ind1)
+    print('opening',ind1)
     DS1 = xr.open_mfdataset(ind1)
     DS1 = center_time(DS1)
     Var1 = xr_getvar(Varname,DS1)
@@ -225,6 +233,10 @@ for Varname in Varlist:
             
             fig, axes = setfig3b1x1()
             xr_llhplot(DV, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA)
+            pltllbox([-150.,-110.],[0.,30.])
+            pltllbox([-110.,-70.],[-30.,0.])
+            pltllbox([-25.,15.],[-30.,0.])
+
             #plt.savefig(pref1+'_'+Varname+'-D.jpg',format='jpg',dpi=300)
             plt.savefig(pref1+'_'+Varname+'-D.pdf',format='pdf',dpi=300)
             plt.show()
@@ -233,6 +245,20 @@ for Varname in Varlist:
         
     print('field processing complete')
 
+```
+
+```python tags=[]
+
+    
+map_proj = ccrs.PlateCarree()
+map_proj = ccrs.Mollweide()
+map_proj._threshold /= 100.
+fig, axes = plt.subplots(ncols=1,
+                         gridspec_kw={'width_ratios': [1]},
+                         subplot_kw={'projection':map_proj},
+                         figsize=(6,3),
+                        )
+pltllbox([-150.,-110.],[0.,30.])
 ```
 
 ```python tags=[]
