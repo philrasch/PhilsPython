@@ -141,11 +141,11 @@ if False:
 ```
 
 ```python
-Varlist = np.array(['RESTOM','FLNTC','FLNT','FSNTC','FSNT','TS','TMQ','PRECT','AEROD_v','CLDLOW','CLDTOT','LWCF','SWCF','TGCLDIWP','TGCLDLWP',
-                    'SHFLX','LHFLX','PBLH','PCONVT','PRECC','PRECS'])
+Varlist = np.array(['RESTOM','FLNTC','FLNT','FSNTC','FSNT','TS','TMQ','PRECT','AODVIS','CLDLOW','CLDTOT','LWCF','SWCF','TGCLDIWP','TGCLDLWP',
+                    'SHFLX','LHFLX','PBLH'])
 #Varlist = np.array(['TS','TMQ','PRECT'])
 #Varlist = np.array(['RESTOM','LWCF','SWCF','FLNT','FSNT'])
-Varlist = np.array(['AODVIS'])
+#Varlist = np.array(['AODVIS'])
 
 
 for Varname in Varlist:
@@ -164,7 +164,7 @@ for Varname in Varlist:
     DV = V2-V1
     print('DV range, mean', DV.min().values, DV.max().values, (Var2yga-Var1yga).values)
     print()
-    print(Vname, V1.attrs['long_name'],'Range V1 and V2 ',V1.min().values, V1.max().values, V2.min().values, V2.max().values)
+    print(Varname, V1.attrs['long_name'],'Range V1 and V2 ',V1.min().values, V1.max().values, V2.min().values, V2.max().values)
 
     print('V1A %5.3f' % (Var1yga.values),' V2A %5.3f' % (Var2yga.values))
 
@@ -205,7 +205,7 @@ for Varname in Varlist:
 #        xr_llhplot(V2, ax=axes[1],clevs=clevs,ylabels=False,title=pref2+sV2A)
         xr_cshplot(V2, lon, lat,ax=axes[0],clevs=clevs,title=pref2+sV2A)
 #        xr_llhplot(DV, ax=axes[2],clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA)        
-        xr_cshplot(DV, lon, lat,ax=axes[2],clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA)
+        xr_cshplot(DV, lon, lat,ax=axes[2],clevs=dlevs,cmap=dmap,title=pref2+'-'+pref1+sDVA)
         pltllbox([-150.,-110.],[0.,30.])
         pltllbox([-110.,-70.],[-30.,0.])
         pltllbox([-25.,15.],[-30.,0.])
