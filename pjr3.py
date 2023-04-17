@@ -26,7 +26,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # from mpl_toolkits.basemap import Basemap
 #from netCDF4 import Dataset, date2index
-from datetime import datetime
+from datetime import datetime, timedelta
 import matplotlib.colors as mcolors
 import warnings
 
@@ -1316,7 +1316,7 @@ def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=Non
         ax.set_title(title)
         
     cb.ax.tick_params(labelsize=8)
-    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
                       linewidth=2, color='gray', alpha=0.5)
     gl.left_labels=ylabels
     gl.right_labels=ylabels
@@ -1459,6 +1459,43 @@ def center_time(DS1):
     correct the time coordinate in DS1 to represent the center of the time bounds
  
     """
+    DS = DS1.copy()
+    # the time coord is often registered at the end of the time averaging interval
+    # reset to the midpoint of the interval
+    time = DS['time'].copy()
+    #print('time',time)
+    #print('xxx',time.values)
+    bndname = time.attrs['bounds']
+    time_bnds = DS1[bndname]
+    #print('time_bnds',time_bnds)
+    tbdims = time_bnds.dims
+    #print('tbdims',tbdims)
+    tbd_name = ''
+    # find the bounds name (the dim that isn't time)
+    for tbd in tbdims:
+        if tbd != 'time':
+            tbd_name = tbd
+    #print('tbd_name',tbd_name)
+    #print('tbdims',tbdims)
+    # if no bounds, then do nothing
+    if tbd_name == '':
+        return DS
+    else:
+        #tb = time_bnds.values
+        #print('time_bnds',time_bnds)
+        tbm = time_bnds.mean(dim=tbd_name).values
+        #print('yyy',tbm)
+        DS.coords["time"] = tbm
+        DS['time'].attrs['long_name'] = 'time'
+        DS['time'].attrs['bounds'] = 'time_bnds'
+        return DS
+
+def center_time_v09(DS1):
+    """center_time(DS1)
+    
+    correct the time coordinate in DS1 to represent the center of the time bounds
+ 
+    """
     # the time coord is often registered at the end of the time averaging interval
     # reset to the midpoint of the interval
     time = DS1['time'].copy()
@@ -1577,6 +1614,35 @@ def add_prov(infile):
     os.rename(infile,infile+"_orig")
     os.rename(newfile, infile)
     os.remove(infile+"_orig")
+
+def tavg_mon_wt(xr_var):
+    """
+    time avg,, weight by days in each month
+    see https://ncar.github.io/esds/posts/2021/yearly-averages-xarray/
+    """
+    # Determine the month length
+    month_length = xr_var['time'].dt.days_in_month
+    # Calculate the weights
+    wgts = month_length.groupby("time.year") / month_length.groupby("time.year").sum()
+    # Make sure the weights in each year add up to 1
+    np.testing.assert_allclose(wgts.groupby("time.year").sum(xr.ALL_DIMS), 1.0)
+    
+    # Subset our dataset for our variable
+    obs = xr_var
+
+    # Setup our masking for nan values
+    cond = obs.isnull()
+    ones = xr.where(cond, 0.0, 1.0)
+
+    # Calculate the numerator
+    obs_sum = (obs * wgts).resample(time="AS").sum(dim="time")
+
+    # Calculate the denominator
+    ones_out = (ones * wgts).resample(time="AS").sum(dim="time")
+    wavg = obs_sum / ones_out
+    wavg['time'] = wavg.time+timedelta(days=182.5)
+    # Return the weighted average
+    return wavg
 
 print ("pjr3.py complete")
 

@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.4
+      jupytext_version: 1.14.5
   kernelspec:
     display_name: Python [conda env:.conda-pjrpy3] *
     language: python
@@ -44,7 +44,7 @@ def pltllbox(xri, yri):
         xri[1] += 360.
     regcx = [xri[0],xri[1],xri[1],xri[0],xri[0]]
     regcy = [yri[0],yri[0],yri[1],yri[1],yri[0]]
-    plt.plot(regcx,regcy,color='cyan',transform=ccrs.PlateCarree())
+    plt.plot(regcx,regcy,color='red',transform=ccrs.PlateCarree())
 ```
 
 ```python
@@ -63,8 +63,8 @@ Varlist = np.array(['FLNT','FSNT','TS','PRECC','PRECL','CLDLOW','CLDTOT','LWCF',
 Varlist = np.array(['CLDLOW','TGCLDLWP','PRECL','PRECC','SWCF'])
 Varlist = np.array(['FSNT','FSNTC','FLNT','FLNTC'])
 Varlist = np.array(['SWCF','TGCLDLWP','CLDLOW'])
-#Varlist = np.array(['SWCF'])
-#Varlist = np.array(['OCNFRAC'])
+#Varlist = np.array(['FSUTOA','FSNT','FSNTC'])
+Varlist = np.array(['PRECC'])
 
 # specify regions (assume lon always specified as west, then east limit)
 xreg = np.array([[-150.,-110.],[-110,-70],[-25.,15.],[170.,-120.],[-170.,-90.]])%360.
@@ -138,6 +138,7 @@ for Varname in Varlist:
     ind1 = fstring1 % (case_start1,Varname,case_end1)
     print('opening',ind1)
     DS1 = xr.open_mfdataset(ind1)
+    print('xxx',DS1.time)
     DS1 = center_time(DS1)
     Var1 = xr_getvar(Varname,DS1)
     V1 = Var1.mean(dim='time',keep_attrs=True)
@@ -147,9 +148,11 @@ for Varname in Varlist:
     #DS2 = xr.open_mfdataset(ind2)
     DS2 = xr.open_mfdataset(ind2)
 
-    DS2 = center_time(DS2)
+    #DS2 = center_time(DS2)
     Var2 = xr_getvar(Varname,DS2)
-    #print('yyy',Var2)
+    print('yyy',Var2)
+    print('yy2',Var2.lat)
+    print('yy3',Var2.time)
     V2 = Var2.mean(dim='time',keep_attrs=True)
 
     DV = V1-V2
@@ -201,8 +204,9 @@ for Varname in Varlist:
         #print('xxx',dlevs)
         dmap = diverge_map()
 
-        plconf = '1x3'
         plconf = '3-1x1'
+        plconf = '1x3'
+
         # good setup for 1 row of 3 columns
         if plconf == '1x3':
             fig, axes = plt.subplots(ncols=3
@@ -214,7 +218,7 @@ for Varname in Varlist:
             xr_llhplot(V1, ax=axes[0],clevs=clevs,title=pref1+sV1A)
             xr_llhplot(V2, ax=axes[1],clevs=clevs,ylabels=False,title=pref2+sV2A)
             xr_llhplot(DV, ax=axes[2],clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA)
-            #plt.savefig(pref1+'_'+Varname+'.jpg',format='jpg',dpi=150)
+            #plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
             plt.show()
             
         # good setup for 3 rows of 1 columns
@@ -223,12 +227,18 @@ for Varname in Varlist:
             fig, axes = setfig3b1x1()
             print('V1XXX',V1)
             xr_llhplot(V1, ax=axes,clevs=clevs,title=pref1+sV1A)
-            plt.savefig(pref1+'_'+Varname+'.jpg',format='jpg',dpi=300)
+            pltllbox([-150.,-110.],[0.,30.])
+            pltllbox([-110.,-70.],[-30.,0.])
+            pltllbox([-25.,15.],[-30.,0.])
+            plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
             plt.show()
             
             fig, axes = setfig3b1x1()
             xr_llhplot(V2, ax=axes,clevs=clevs,ylabels=False,title=pref2+sV2A)
-            plt.savefig(pref2+'_'+Varname+'.jpg',format='jpg',dpi=300)
+            pltllbox([-150.,-110.],[0.,30.])
+            pltllbox([-110.,-70.],[-30.,0.])
+            pltllbox([-25.,15.],[-30.,0.])
+            plt.savefig(pref2+'_'+Varname+'.pdf',format='pdf',dpi=300)
             plt.show()
             
             fig, axes = setfig3b1x1()
@@ -237,7 +247,6 @@ for Varname in Varlist:
             pltllbox([-110.,-70.],[-30.,0.])
             pltllbox([-25.,15.],[-30.,0.])
 
-            #plt.savefig(pref1+'_'+Varname+'-D.jpg',format='jpg',dpi=300)
             plt.savefig(pref1+'_'+Varname+'-D.pdf',format='pdf',dpi=300)
             plt.show()
 
@@ -247,21 +256,7 @@ for Varname in Varlist:
 
 ```
 
-```python tags=[]
-
-    
-map_proj = ccrs.PlateCarree()
-map_proj = ccrs.Mollweide()
-map_proj._threshold /= 100.
-fig, axes = plt.subplots(ncols=1,
-                         gridspec_kw={'width_ratios': [1]},
-                         subplot_kw={'projection':map_proj},
-                         figsize=(6,3),
-                        )
-pltllbox([-150.,-110.],[0.,30.])
-```
-
-```python tags=[]
+```python
 # sample multilevel field on hybrid levels
 fig, axes = setfig3b1x1()
 
@@ -272,27 +267,88 @@ def getvarDSM(Varname,fstring,case_start,case_end):
     ind = fstring % (case_start,Varname,case_end)
     #print('opening',ind1)
     DS = xr.open_mfdataset(ind)
+    DS.coords['lon'] = (DS.coords['lon'] + 180) % 360 - 180
+    DS = DS.sortby(DS.lon)
     Var = xr_getvar(Varname,DS)
     VM = Var.mean(dim='time',keep_attrs=True)
     return VM;
 
-mylev=850.
-FREQL = getvarDSM('FREQL', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')
-CLOUD = getvarDSM('CLOUD', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')/100.
+def derfld(VN, fstring1, case_start1, case_end1):
+    """ calculate some derived fields
+    ICNUMLIQ850 is in-cloud number conc at 850 lev hybrid surface
+    ICNUMLIQPBLT is in-cloud number conc near PBL top
+    PRECT is total precip
+    """
+    if VN == 'ICNUMLIQ850':
+        
+        mylev=850.
+        FREQL = getvarDSM('FREQL', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')
+        CLOUD = getvarDSM('CLOUD', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')/100.
 
-NUMLIQ = getvarDSM('NUMLIQ', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')*1.e-6
-ICNUMLIQ = NUMLIQ/(CLOUD+1.e-2)
-ICNUMLIQ = ICNUMLIQ.rename('ICNUMLIQ')
-ICNUMLIQ.attrs['long_name'] = 'approx in-cl number @850hPa hybsfc'
-ICNUMLIQ.attrs['units'] = '#/cc'
-
+        NUMLIQ = getvarDSM('NUMLIQ', fstring1, case_start1, case_end1).sel(lev=mylev,method='nearest')*1.e-6
+        ICNUMLIQ = NUMLIQ/(CLOUD+1.e-2)
+        ICNUMLIQ = ICNUMLIQ.rename('ICNUMLIQ')
+        ICNUMLIQ.attrs['long_name'] = 'approx in-cl number @850hPa hybsfc'
+        ICNUMLIQ.attrs['units'] = '#/cc'
+        return ICNUMLIQ
+    elif VN == 'PRECT':
+        print("PRECT")
+        PRECL = getvarDSM('PRECL', fstring1, case_start1, case_end1)
+        PRECC = getvarDSM('PRECC', fstring1, case_start1, case_end1)
+        PRECT = PRECL+PRECC
+        PRECT = PRECT.rename('PRECT')
+        PRECT.attrs['long_name'] = 'total precipitation (liq + ice)'
+        #PRECT.attrs['units'] = '#/cc'
+        return PRECT
+    elif VN == 'ICNUMLIQPBLT':
+        PBLH = getvarDSM('PBLH', fstring1, case_start1, case_end1)
+        Z3 = getvarDSM('Z3', fstring1, case_start1, case_end1)
+        #P3 = getvarDSM('P3', fstring1, case_start1, case_end1)
+        PHIS = getvarDSM('PHIS', fstring1, case_start1, case_end1)
+        # find the 1D array of indices closest to the PBLH
+        # I think Z3 is height above sea-level, and PBLH is height above surface
+        Z3D = Z3 - PHIS/9.8 - PBLH
+        llmin1 =  np.abs(Z3D.values).argmin(axis=0)
+        lind = llmin1.flatten()
+        indi = np.arange(0,len(lind))
+        ni,nj,nk = np.shape(Z3.values)
+        NUMLIQ = getvarDSM('NUMLIQ', fstring1, case_start1, case_end1)*1.e-6
+        CLOUD = getvarDSM('CLOUD', fstring1, case_start1, case_end1)/100.
+        ICNUMLIQ = NUMLIQ/(CLOUD+1.e-2)
+        ICNUMLIQ = ICNUMLIQ.rename('ICNUMLIQ')
+        ICNUMLIQ.attrs['long_name'] = 'approx in-cloud number conc'
+        ICNUMLIQ.attrs['units'] = '#/cc'
+        VAR = ICNUMLIQ.copy()
+        # now extract data for each column at level lind
+        data = VAR.values
+        datas = data.reshape((ni,nj*nk))
+        dataz = datas[lind,indi]
+        datazr = dataz.reshape((nj,nk))
+        VARs = VAR.sel(lev=1000.,method='nearest')
+        VARs.attrs['long_name'] = VARs.attrs['long_name']+' near PBLH'
+        VARs.data = datazr
+        return VARs
+    else:
+        1./0.
+        
+#PRECT = derfld('PRECT',fstring1, case_start1, case_end1)
+#PRECTA = PRECT.weighted(weights).mean()
+#print('PRECTA',PRECTA.values)
+#xr_llhplot(PRECT, ax=axes)#,clevs=clevs,title=pref1+sV1A)
+#ICNUMLIQ = derfld('ICNUMLIQPBLT',fstring1, case_start1, case_end1)
+ICNUMLIQ = derfld('ICNUMLIQPBLT',fstring2, case_start2, case_end2)
 xr_llhplot(ICNUMLIQ, ax=axes)#,clevs=clevs,title=pref1+sV1A)
-#plt.savefig(pref1+'_'+Varname+'.jpg',format='jpg',dpi=300)
+#plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
+pltllbox([-150.,-110.],[0.,30.])
+pltllbox([-110.,-70.],[-30.,0.])
+pltllbox([-25.,15.],[-30.,0.])
 plt.show()
+
+PRECT = derfld('PRECT',fstring1, case_start1, case_end1)
 
 ```
 
-```python tags=[]
+```python
 # sample multilevel field at level nearest PBLH
 fig, axes = setfig3b1x1()
 
@@ -336,7 +392,11 @@ VARs.attrs['long_name'] = VARs.attrs['long_name']+' near PBLH'
 VARs.data = datazr
 
 xr_llhplot(VARs, ax=axes)#,clevs=clevs,title=pref1+sV1A)
-#plt.savefig(pref1+'_'+Varname+'.jpg',format='jpg',dpi=300)
+pltllbox([-150.,-110.],[0.,30.])
+pltllbox([-110.,-70.],[-30.,0.])
+pltllbox([-25.,15.],[-30.,0.])
+
+#plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
 plt.show()
 
 ```
@@ -345,6 +405,10 @@ plt.show()
 
 lon = xr_getvar('lon',DS1)
 lat = xr_getvar('lat',DS1)
+indof = fstring1 % (case_start1,'OCNFRAC',case_end1)
+DSOF = xr.open_mfdataset(indof)
+of = xr_getvar('OCNFRAC',DSOF).squeeze()
+print('of',of)
 DVcum = 0.
 #DV = V1
 print('analyzing variable DV.name=',DV.name)
@@ -653,7 +717,7 @@ for Vname in Varlist:
         plotZMf(datad, lat, lev,axesa=axes[2],plotOpt={'clevs':dlevs,'cmap':dmap,'colorbar':"bot",'units':V2.units,'ytop':ytop,'ltitle':pref1+'-'+pref2})
 
         #print('attribute check on xarray',hasattr(V1,'units'))
-        #plt.savefig('test_'+Vname+'.jpg',format='jpg')
+        #plt.savefig('test_'+Vname+'.pdf',format='pdf')
         #plt.tight_layout()
         plt.show()
       
