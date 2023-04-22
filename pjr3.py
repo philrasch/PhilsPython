@@ -1433,7 +1433,38 @@ def xr_cshplot_v1(xrVar, xrLon, xrLat):
 #   plt.show
 # -
 
-def make_fvarea(lon,lat):
+def make_fvarea(lon,lat,alt=None):
+    """make_fvarea(lon,lat)
+
+    make finite volume areas, given 1-D lon and lat arrays
+    """
+    pio180 = pi/180.
+    yw = np.zeros(len(lat)+1)
+    # walls in degrees
+    yw[1:-1] = (lat[1:] + lat[:-1]) / 2
+    if (np.abs(lat[-1]-lat[0])-90.) < 1.e-4:
+        #print('polepoint')
+        yw[0] = lat[0]
+        yw[-1] = lat[-1]
+    else:
+        #print('nopole point')
+        yw[0] = lat[0]-(lat[1]-lat[0])/2.
+        yw[-1] = lat[-1]+(lat[1]-lat[0])/2.
+
+    if alt == True:
+        #print('alt True')
+        dy = np.diff(yw*pio180)*np.cos(lat*pio180)
+    else:
+        # wall in sin(latitude in radians)
+        yw = np.sin(yw*pio180)
+        dy = np.diff(yw)
+    dx = float(lon[1]-lon[0])*pio180
+    dxa = np.full([len(lat),len(lon)],dx)
+    area = dxa*dy[:,np.newaxis]
+
+    return area
+
+def make_fvarea_v1(lon,lat):
     """make_fvarea(lon,lat)
 
     make finite volume areas, given 1-D lon and lat arrays

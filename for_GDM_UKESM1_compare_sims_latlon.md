@@ -29,13 +29,24 @@ def setfig3b1x1 ():
     """
     return fig and axes for a single panel figure
     """
+    plotproj = ccrs.Mollweide()
+    plotproj._threshold /= 100.
     fig, axes = plt.subplots(ncols=1,
                              gridspec_kw={'width_ratios': [1]},
-                             subplot_kw={'projection': ccrs.Mollweide()},
+                             subplot_kw={'projection': plotproj},
                              figsize=(6,3),
                             )
     fig.set_dpi(300.0)
     return fig, axes;
+
+
+def pltllbox(xri, yri):
+    if xri[1] < xri[0]:
+        xri[1] += 360.
+    regcx = [xri[0],xri[1],xri[1],xri[0],xri[0]]
+    regcy = [yri[0],yri[0],yri[1],yri[1],yri[0]]
+    plt.plot(regcx,regcy,color='red',transform=ccrs.PlateCarree())
+    
 ```
 
 ```python
@@ -51,95 +62,85 @@ def fix_UKMO_ds(filename, dsin: xr.Dataset) -> xr.Dataset:
     name_dict = dict()
     ds = dsin.copy()
     ds = _normalize_lat_lon(ds) # harmonize the lat, lon fields
+    ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180
+    ds = ds.sortby(ds.lon)
+    #print('ds',ds)
     for Vname in ds:
         #print('Vname',Vname)
         if (('PBL' in filename) & ('height_after' in Vname)):
-            ds[Vname].attrs['prefix name'] = Vname
+            ds[Vname].attrs['UKESM name'] = Vname
             ds[Vname].attrs['units'] = 'kg/m2'
             ds[Vname].attrs['long_name'] = 'PBL height'
-            ds = ds.rename({Vname:'PBLHPJR'})
+            ds = ds.rename({Vname:'PBLH'})
             #print('fixed PBLH')
             
         if (('LWP' in filename) & (Vname == 'm01s02i391')):
-            ds[Vname].attrs['prefix name'] = Vname
+            ds[Vname].attrs['UKESM name'] = Vname
             ds[Vname].attrs['units'] = 'kg/m2'
             ds[Vname].attrs['long_name'] = 'Liq Water Path'
-            ds = ds.rename({Vname:'LWPPJR'})
+            ds = ds.rename({Vname:'TGCLDLWP'})
             #print('fixed LWP')
             
         if (('AOD' in filename) & (Vname == 'unknown')):
-            ds[Vname].attrs['prefix name'] = Vname
+            ds[Vname].attrs['UKESM name'] = Vname
             ds[Vname].attrs['units'] = '1'
             ds[Vname].attrs['long_name'] = 'AOD 550nm'
-            ds = ds.rename({Vname:'AODPJR'})
-        
+            ds = ds.rename({Vname:'AOD'})
+    
         if (('_r_e' in filename) & (Vname == 'unknown')):
-            ds[Vname].attrs['prefix name'] = Vname
+            ds[Vname].attrs['UKESM name'] = Vname
             ds[Vname].attrs['long_name'] = 'Effective Radius at Cloud-top'
+            ds[Vname].attrs['units'] = '$\mu m$'
             ds = ds.rename({Vname:'REPJR'})
             #print('fixed RE')
 
         if (('precip_rate' in filename) & (Vname == 'precipitation_flux')):
-            ds[Vname].attrs['prefix name'] = Vname
-            ds[Vname].attrs['units'] = 'mm/d'
-            ds[Vname] = ds[Vname]*8.64e4
+            ds[Vname].attrs['UKESM name'] = Vname
+            ds[Vname].attrs['units'] = 'm/s'
+            ds[Vname] = ds[Vname]/1000.
             ds[Vname].attrs['long_name'] = 'Total Precipitation'
-            ds = ds.rename({Vname:'PRECTPJR'})
+            ds = ds.rename({Vname:'PRECT'})
             #print('fixed PRECT')
            
         if (('p_surface_Pa' in filename) & (Vname == 'surface_air_pressure')):
-            ds[Vname].attrs['prefix name'] = Vname
+            ds[Vname].attrs['UKESM name'] = Vname
             ds[Vname] = ds[Vname]/100.
             ds[Vname].attrs['units'] = 'hPa'
             ds[Vname].attrs['long_name'] = ds[Vname].attrs['standard_name']
-            ds = ds.rename({Vname:'PSPJR'})
+            ds = ds.rename({Vname:'PS'})
             #print('fixed PS')
         
         if (('cloud_fraction' in filename) & (Vname == 'cloud_area_fraction_in_atmosphere_layer')):
-            ds[Vname].attrs['prefix name'] = Vname
+            ds[Vname].attrs['UKESM name'] = Vname
             #ds[Vname] = ds[Vname]/100.
             #ds[Vname].attrs['units'] = 'hPa'
             #ds[Vname].attrs['long_name'] = ds[Vname].attrs['standard_name']
             ds = ds.rename({Vname:'CFPJR'})
         
         if (('T_surface_K' in filename) & (Vname == 'surface_temperature')):
-            ds[Vname].attrs['prefix name'] = Vname
+            ds[Vname].attrs['UKESM name'] = Vname
             ds[Vname].attrs['long_name'] = ds[Vname].attrs['standard_name']
-            ds = ds.rename({Vname:'TSPJR'})
+            ds = ds.rename({Vname:'TS'})
             #print('fixed TS')
             
         if (('_SW_W' in filename) & (Vname == 'unknown')):
-            ds[Vname].attrs['prefix name'] = Vname
+            ds[Vname].attrs['UKESM name'] = Vname
             ds[Vname].attrs['units'] = 'W/m2'
             ds[Vname].attrs['long_name'] = 'Net TOA Shortwave'
-            ds = ds.rename({Vname:'FSNTPJR'})
+            ds = ds.rename({Vname:'FSNT'})
             #print('fixed FSNT')
             
         if (('_SW_Clear' in filename) & (Vname == 'toa_outgoing_shortwave_flux_assuming_clear_sky')):
-            ds[Vname].attrs['prefix name'] = Vname
+            ds[Vname] = -ds[Vname]
+            ds[Vname].attrs['UKESM name'] = Vname
             ds[Vname].attrs['units'] = 'W/m2'
-            ds[Vname].attrs['long_name'] = 'Clearsky TOA Shortwave'
-            ds = ds.rename({Vname:'FSUTCPJR'})
+            ds[Vname].attrs['long_name'] = 'outgoing SW assuming clearsky (upward -ive)'
+            ds = ds.rename({Vname:'MFSUTCPJR'})
               
 
     return ds
 
-if False:
-    Varlist = np.array(['p_surface_Pa','T_surface_K','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
-    Varlist = np.array(['p_surface_Pa'])
-    for Varname in Varlist:
-        print()
-        print('-------------------------------'+Varname)    
-        ind1 = fstring1 % (case_start1,Varname,case_end1)
-        DS1 = xr.open_mfdataset(ind1)
-        print('DS1',list(DS1))
-        DS2 = fix_UKMO_ds(ind1, DS1)
-        print('fixed DS2', list(DS2))
-        newvars = list(DS2)
-        for nv in newvars:
-            if 'PJR' in nv:
-                print(DS2[nv])
-                print('range',DS2[nv].values.min(),DS2[nv].values.max())
+
 ```
 
 ```python
@@ -156,6 +157,7 @@ def xr_getvar_sl(VN, DS1, method='surface', verbose=False):
     if 'model_level_number' in dimlist:
         level_height = xr_getvar('level_height',DS1)
         sigma = xr_getvar('sigma',DS1)
+        print('sigma',sigma.values)
         surface_altitude = xr_getvar('surface_altitude',DS1)
         altitude = level_height + (sigma * surface_altitude)
         altitude.attrs['long_name'] = 'altitude above mean sea-level'
@@ -165,14 +167,23 @@ def xr_getvar_sl(VN, DS1, method='surface', verbose=False):
             V1 = Var1.isel(model_level_number=0)
             V1.attrs['long_name'] = V1.attrs['long_name'] + ' (surface level)'
         elif method == 'maxb850':
+            i = 1
+            j = 1
             print('method:max below 850')
-            dz1 = altitude - surface_altitude
-            dz2 = (sigma - 1)*surface_altitude + level_height
+            dz1 = altitude - surface_altitude   # height above surface
+            print('altitude',altitude[:,i,j].values,altitude)
+            print('surface_altitude',surface_altitude[i,j].values,surface_altitude)
+            print('dz1(i,j)',dz1[:,i,j].values)
+            dz2 = (sigma - 1)*surface_altitude + level_height  # height above sea level
+            print('dz2(i,j)',dz2[:,i,j].values)
             pmb = 850.
             psmb = 1000.
             scaleheight = 8.4e3
             altmb = -np.log(pmb/psmb)*scaleheight
+            print('altmb is ', altmb)
             V1 = Var1.copy()
+            V1.values = dz1.values ### for the moment, overwrite field with height above surface height
+            print('V1',V1[:,i,j].values)
             V2 = V1.where(dz1 <= altmb+50.)
             V3 = V2.max(dim='model_level_number')
             V3.attrs['long_name'] = 'max value below pmb of '+V2.attrs['long_name']
@@ -185,25 +196,25 @@ def xr_getvar_sl(VN, DS1, method='surface', verbose=False):
 weights = None
 
 Varlist = np.array(['LWP_kg_m2'])
-Varlist = np.array(['p_surface_Pa'])
-Varlist = np.array(['T_surface_K'])
+#Varlist = np.array(['p_surface_Pa'])
+#Varlist = np.array(['T_surface_K'])
 #Varlist = np.array(['AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
-Varlist = np.array(['p_surface_Pa','T_surface_K','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+#Varlist = np.array(['Outgoing_SW_Clear_W_m2','p_surface_Pa','T_surface_K','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+Varlist = np.array(['Outgoing_SW_Clear_W_m2','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
 Varlist = np.array(['cloud_fraction'])
-Varlist = np.array(['T_surface_K'])
-Varlist = np.array(['Outgoing_SW_Clear_W_m2'])
-
+Varlist = np.array(['Outgoing_SW_Clear_W_m2','net_ToA_SW_W_m2'])
+                   
 Vdict = {'net_ToA_LW_W_m2':'toa_outgoing_longwave_flux'
-        ,'net_ToA_SW_W_m2':'FSNTPJR'
-        ,'AOD_550nm':'AODPJR'
-        ,'LWP_kg_m2':'LWPPJR'
-        ,'p_surface_Pa':'PSPJR'
-        ,'T_surface_K':'TSPJR'
-        ,'precip_rate_kg_m2_sec':'PRECTPJR'
-        ,'PBL_depth_metres':'PBLHPJR'
+        ,'net_ToA_SW_W_m2':'FSNT'
+        ,'AOD_550nm':'AOD'
+        ,'LWP_kg_m2':'TGCLDLWP'
+        ,'p_surface_Pa':'PS'
+        ,'T_surface_K':'TS'
+        ,'precip_rate_kg_m2_sec':'PRECT'
+        ,'PBL_depth_metres':'PBLH'
         ,'cloudtop_r_e_microns':'REPJR'
         ,'cloud_fraction':'CFPJR'
-        ,'Outgoing_SW_Clear_W_m2':'FSUTCPJR'
+        ,'Outgoing_SW_Clear_W_m2':'MFSUTCPJR'
         }
 
 
@@ -215,44 +226,32 @@ namereg = ['NEP','SEP','SEA','NP','SP']
 #yreg = [[-90.,91.]]
 
 
-case_start1 = '~/NetCDF_Files/UKESM1_data/R1_NEP_20450101_20490101_mean_'
-case_start1 = '~/NetCDF_Files/UKESM1_data/R2_SEP_20450101_20490101_mean_'
+REG_ID = 'R1_NEP'
+REG_ID = 'R2_SEP'
+REG_ID = 'R3_SEA'
+
+# coupled simulations
+case_start1 = '~/NetCDF_Files/UKESM1_data/'+REG_ID+'_20450101_20490101_mean_'
 case_end1 = ".nc"
 fstring1 ='%s%s%s' 
-pref1='NEP_UKESM1_50Tgpy'
+pref1=REG_ID+'_UKESM1_50Tgpy_Cpld'
 
 case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_20450101_20490101_mean_'
 case_end2 = ".nc"
 pref2='UKESM1_control'
 fstring2 ='%s%s%s' 
 
-if False:
-
-    case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.y1-5.FORCING.nc"
-    case_end1 = ""
-    pref1='E3SM_CN600'
-    fstring1 ='%s%.0s%.0s' 
-
-    case_start2 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_CNTL_remapped/20220930.v2.LR.F2010.E1_CNTL.eam.h0.y1-14.FORCING.nc"
-    case_end2 = ""
-    fstring2 ='%s%.0s%.0s' 
-    pref2='E3SMcontrol'
-
-    #case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.1-11"
-    case_start1 = "/scratch2/ec2-user/PJR/E3SM/20221123.v2.LR.F2010.E1_R1-3_CDNC2000/fv192x288/20221123.v2.LR.F2010.E1_R1-3_CDNC2000.eam.h0.1-11."
+if True:
+    # fixed SST simulations
+    case_start1 = '~/NetCDF_Files/UKESM1_data/'+REG_ID+'_AtmosOnly_19840101_19880101_mean_'
     case_end1 = ".nc"
-    pref1='E3SM_CN2000'
-    fstring1 ='%s%.0s%.0s' 
     fstring1 ='%s%s%s' 
+    pref1=REG_ID+'_50Tgpy_FixedSST'
 
-    #case_start2 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_CNTL_remapped/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14"
-    case_start2 = "/scratch2/ec2-user/PJR/E3SM/20220930.v2.LR.F2010.E1_CNTL/fv192x288/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14."
+    case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_AtmosOnly_19840101_19880101_mean_'
     case_end2 = ".nc"
-    fstring2 ='%s%.0s%.0s' 
+    pref2='Control'
     fstring2 ='%s%s%s' 
-    pref2='E3SMcontrol'
-
-
 
 Varname='<Varname>'
 ind1 = fstring1 % (case_start1,Varname,case_end1)
@@ -276,6 +275,7 @@ for Varname in Varlist:
     #print('xxx opening',ind1)
     DS1 = xr.open_mfdataset(ind1)
     DS1 = fix_UKMO_ds(ind1, DS1)
+    #print('DS1.lon',DS1.lon.values)
     #DS1 = center_time(DS1)
     VN = Vdict[Varname]
     V1 = xr_getvar_sl(VN,DS1,method='maxb850')
@@ -298,9 +298,9 @@ for Varname in Varlist:
         area = DS2['area']
     else:
         print('calculating weights')
-        lat = Var1['lat'].values
-        lon = Var1['lon'].values
-        area = make_fvarea(lon,lat)
+        lat = V1['lat'].values
+        lon = V1['lon'].values
+        area = make_fvarea(lon,lat,alt=False)
     weights = V1.copy()
     weights.data =area
     weights.attrs['units']='steradians'
@@ -325,20 +325,20 @@ for Varname in Varlist:
     else:
         clev_rng = {'CDNUMC':np.array([0.,3.e11]),'FSNT':np.array([40.,360]),
                     'TGCLDLWP':np.array([0.,280.]),'PRECL':np.array([0.,10.]),
-                    'PRECC':np.array([0.,16.]),'SWCF':np.array([-140.,0.]),
+                    'PRECT':np.array([0.,16.]),'SWCF':np.array([-140.,0.]),
                     'CLDLOW':np.array([0.,90.]),'XXX':np.array([-45.,45.]),
                    }
         dlev_rng = {'CDNUMC':np.array([0.,3.e11])/2.,'FSNT':np.array([-45.,45.]),
                    'TGCLDLWP':np.array([-80.,80.]),'PRECL':np.array([-1.,1.]),
-                    'PRECC':np.array([-1.,1.]),'SWCF':np.array([-45.,45.]),
+                    'PRECT':np.array([-5.,5.]),'SWCF':np.array([-45.,45.]),
                     'CLDLOW':np.array([-10.,10.]),'XXX':np.array([-45.,45.]),
                    }
-        if Varname in clev_rng:
-            clevs = findNiceContours(clev_rng[Varname],nlevs = 12)
+        if V1.name in clev_rng:
+            clevs = findNiceContours(clev_rng[V1.name],nlevs = 12)
         else:
             clevs = findNiceContours(np.array([V1.values,V2.values]),nlevs = 12)
-        if Varname in dlev_rng:
-            dlevs = findNiceContours(dlev_rng[Varname],nlevs = 15,rmClev=0.,sym=True)
+        if V1.name in dlev_rng:
+            dlevs = findNiceContours(dlev_rng[V1.name],nlevs = 15,rmClev=0.,sym=True)
         else:
             dlevs = findNiceContours(np.array([DV.min().values,DV.max().values]),nlevs = 15, rmClev=0.,sym=True)
         #dlevs = [-5.,-2.,-1.,-0.5,-0.2,-0.1,0.1,0.2,0.5,1.,2.,5.]
@@ -346,7 +346,7 @@ for Varname in Varlist:
         dmap = diverge_map()
 
         plconf = '3-1x1'
-        plconf = '1x3'
+        #plconf = '1x3'
         # good setup for 1 row of 3 columns
         if plconf == '1x3':
             fig, axes = plt.subplots(ncols=3
@@ -378,6 +378,9 @@ for Varname in Varlist:
             xr_llhplot(DV, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA, cbartitle=cbartitle)
             #plt.savefig(pref1+'_'+Varname+'-D.jpg',format='jpg',dpi=300)
             plt.savefig(pref1+'_'+Varname+'-D.'+filefmt,format=filefmt,dpi=300)
+            pltllbox([-150.,-110.],[0.,30.])
+            pltllbox([-110.,-70.],[-30.,0.])
+            pltllbox([-25.,15.],[-30.,0.])
             plt.show()
 
 
@@ -387,8 +390,12 @@ for Varname in Varlist:
 ```
 
 ```python
-xr.show_versions()
-# V1.convert_calendar("noleap")
+89.375 -88.125
+89.375 + 1.25/2.
+```
+
+```python
+1./0.
 ```
 
 ```python
