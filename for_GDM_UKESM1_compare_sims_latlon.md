@@ -135,7 +135,7 @@ def fix_UKMO_ds(filename, dsin: xr.Dataset) -> xr.Dataset:
             ds[Vname].attrs['UKESM name'] = Vname
             ds[Vname].attrs['units'] = 'W/m2'
             ds[Vname].attrs['long_name'] = 'outgoing SW assuming clearsky (upward -ive)'
-            ds = ds.rename({Vname:'MFSUTCPJR'})
+            ds = ds.rename({Vname:'MFSUTC'})
               
 
     return ds
@@ -214,7 +214,7 @@ Vdict = {'net_ToA_LW_W_m2':'toa_outgoing_longwave_flux'
         ,'PBL_depth_metres':'PBLH'
         ,'cloudtop_r_e_microns':'REPJR'
         ,'cloud_fraction':'CFPJR'
-        ,'Outgoing_SW_Clear_W_m2':'MFSUTCPJR'
+        ,'Outgoing_SW_Clear_W_m2':'MFSUTC'
         }
 
 
@@ -257,16 +257,6 @@ Varname='<Varname>'
 ind1 = fstring1 % (case_start1,Varname,case_end1)
 print('example string used for file open',ind1)
 
-if False:
-    indlf = fstring1 % (case_start1,'LANDFRAC',case_end1)
-    print('indlf',indlf)
-    DSLF = xr.open_mfdataset(indlf)
-    lf = xr_getvar('LANDFRAC',DSLF).squeeze()
-    of = 1.-lf # make ocean fraction the complement of lf (ignore ice)
-    indif = fstring1 % (case_start1,'ICEFRAC',case_end1)
-    DSIF = xr.open_mfdataset(indif)
-    ifr = xr_getvar('ICEFRAC',DSIF).squeeze()
-
 
 for Varname in Varlist:
     print()
@@ -278,6 +268,7 @@ for Varname in Varlist:
     #print('DS1.lon',DS1.lon.values)
     #DS1 = center_time(DS1)
     VN = Vdict[Varname]
+    print('VN is ',VN)
     V1 = xr_getvar_sl(VN,DS1,method='maxb850')
     #print('V1',V1)
     #V1 = Var1.mean(dim='time',keep_attrs=True)
@@ -300,7 +291,7 @@ for Varname in Varlist:
         print('calculating weights')
         lat = V1['lat'].values
         lon = V1['lon'].values
-        area = make_fvarea(lon,lat,alt=False)
+        area = make_fvarea(lon,lat)
     weights = V1.copy()
     weights.data =area
     weights.attrs['units']='steradians'
@@ -390,8 +381,144 @@ for Varname in Varlist:
 ```
 
 ```python
-89.375 -88.125
-89.375 + 1.25/2.
+def xr_getvar_UK(case_start1,Varname,case_end1):
+    """ get a field from a netCDF file.
+    If it is a multi-level field, do something useful to provide single level information
+    This function assumes that the x-xoordinate increases monotonically
+
+    """
+    
+    Vdict = {'net_ToA_LW_W_m2':'toa_outgoing_longwave_flux'
+        ,'net_ToA_SW_W_m2':'FSNT'
+        ,'AOD_550nm':'AOD'
+        ,'LWP_kg_m2':'TGCLDLWP'
+        ,'p_surface_Pa':'PS'
+        ,'T_surface_K':'TS'
+        ,'precip_rate_kg_m2_sec':'PRECT'
+        ,'PBL_depth_metres':'PBLH'
+        ,'cloudtop_r_e_microns':'REPJR'
+        ,'cloud_fraction':'CFPJR'
+        ,'Outgoing_SW_Clear_W_m2':'MFSUTC'
+        }
+
+    ind1 = fstring1 % (case_start1,Varname,case_end1)
+    #print('xxx opening',ind1)
+    DS1 = xr.open_mfdataset(ind1)
+    DS1 = fix_UKMO_ds(ind1, DS1)
+
+    VN = Vdict[Varname]
+    # print('VN is ',VN)
+    Var1 = xr_getvar_sl(VN,DS1,method='maxb850')
+    V1 = Var1
+    return V1
+
+Varlist = np.array(['LWP_kg_m2'])
+#Varlist = np.array(['p_surface_Pa'])
+#Varlist = np.array(['T_surface_K'])
+#Varlist = np.array(['AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+#Varlist = np.array(['Outgoing_SW_Clear_W_m2','p_surface_Pa','T_surface_K','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+Varlist = np.array(['Outgoing_SW_Clear_W_m2','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+Varlist = np.array(['cloud_fraction'])
+Varlist = np.array(['Outgoing_SW_Clear_W_m2','net_ToA_SW_W_m2'])
+
+REG_ID = 'R1_NEP'
+REG_ID = 'R2_SEP'
+REG_ID = 'R3_SEA'
+
+# coupled simulations
+case_start1 = '~/NetCDF_Files/UKESM1_data/'+REG_ID+'_20450101_20490101_mean_'
+case_end1 = ".nc"
+fstring1 ='%s%s%s' 
+pref1=REG_ID+'_UKESM1_50Tgpy_Cpld'
+
+case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_20450101_20490101_mean_'
+case_end2 = ".nc"
+pref2='UKESM1_control'
+fstring2 ='%s%s%s' 
+
+if True:
+    # fixed SST simulations
+    case_start1 = '~/NetCDF_Files/UKESM1_data/'+REG_ID+'_AtmosOnly_19840101_19880101_mean_'
+    case_end1 = ".nc"
+    fstring1 ='%s%s%s' 
+    pref1=REG_ID+'_50Tgpy_FixedSST'
+
+    case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_AtmosOnly_19840101_19880101_mean_'
+    case_end2 = ".nc"
+    pref2='Control'
+    fstring2 ='%s%s%s' 
+
+Varname = 'Outgoing_SW_Clear_W_m2'
+MFSUTC1 = xr_getvar_UK(case_start1,Varname,case_end1)
+MFSUTC2 = xr_getvar_UK(case_start2,Varname,case_end2)
+
+Varname = 'net_ToA_SW_W_m2'
+FSNT1 = xr_getvar_UK(case_start1,Varname,case_end1)
+FSNT2 = xr_getvar_UK(case_start2,Varname,case_end2)
+
+SWCF1 = FSNT1+MFSUTC1
+SWCF2 = FSNT2+MFSUTC2
+print('xxx',SWCF1)
+
+V1 = FSNT1
+V2 = MFSUTC1
+DV = SWCF1
+clevs = None;
+dlevs = None;
+
+print('DV range', DV.min().values, DV.max().values)
+if 'area' in DS1:
+    area = DS1['area']
+elif 'area' in DS2:
+    area = DS2['area']
+else:
+    print('calculating weights')
+    lat = V1['lat'].values
+    lon = V1['lon'].values
+    area = make_fvarea(lon,lat)
+weights = V1.copy()
+weights.data =area
+weights.attrs['units']='steradians'
+
+print(Varname, V1.attrs['long_name'],'Range V1 and V2 ',V1.min().values, V1.max().values, V2.min().values, V2.max().values)
+V1A = V1.weighted(weights).mean()
+sV1A = ' (%5.2f)' % V1A
+V2A = V2.weighted(weights).mean()
+sV2A = ' (%5.2f)' % V2A
+DVA = V1A-V2A
+sDVA = ' (%5.2f)' % DVA
+print('area avgs '+pref1+' %5.2f' % (V1A.values),' '+pref2+' %5.2f' % (V2A.values),' Delta %5.2f' % (DVA.values))
+
+cbartitle = None
+if VN == 'unknown':
+    cbartitle = Varname
+
+filefmt = 'pdf'
+
+
+if plconf == '3-1x1':
+
+    fig, axes = setfig3b1x1()
+    xr_llhplot(V1, ax=axes,clevs=clevs,title=pref1+sV1A, cbartitle=cbartitle)
+    plt.savefig(pref1+'_'+Varname+'.'+filefmt,format=filefmt,dpi=300)
+    plt.show()
+
+    fig, axes = setfig3b1x1()
+    xr_llhplot(V2, ax=axes,clevs=clevs,ylabels=False,title=pref2+sV2A, cbartitle=cbartitle)
+    plt.savefig(pref2+'_'+Varname+'.'+filefmt,format=filefmt,dpi=300)
+    plt.show()
+
+    fig, axes = setfig3b1x1()
+    xr_llhplot(DV, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA, cbartitle=cbartitle)
+    #plt.savefig(pref1+'_'+Varname+'-D.jpg',format='jpg',dpi=300)
+    plt.savefig(pref1+'_'+Varname+'-D.'+filefmt,format=filefmt,dpi=300)
+    pltllbox([-150.,-110.],[0.,30.])
+    pltllbox([-110.,-70.],[-30.,0.])
+    pltllbox([-25.,15.],[-30.,0.])
+    plt.show()
+
+print('field processing complete')
+
 ```
 
 ```python
