@@ -244,11 +244,13 @@ fstring2 ='%s%s%s'
 if True:
     # fixed SST simulations
     case_start1 = '~/NetCDF_Files/UKESM1_data/'+REG_ID+'_AtmosOnly_19840101_19880101_mean_'
+    case_start1 = '~/NetCDF_Files/UKESM1_data_v2/AtmosOnly_25Tg_1979-1989/'+REG_ID+'_AtmosOnly_25Tgy_19790101_19890101_mean_'
     case_end1 = ".nc"
     fstring1 ='%s%s%s' 
     pref1=REG_ID+'_50Tgpy_FixedSST'
 
     case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_AtmosOnly_19840101_19880101_mean_'
+    case_start2 = '/e3sm_prod/phil/NetCDF_Files/UKESM1_data_v2/AtmosOnly_Control/'+REG_ID+'_AtmosOnly_19790101_19890101_mean_'
     case_end2 = ".nc"
     pref2='Control'
     fstring2 ='%s%s%s' 
@@ -262,7 +264,7 @@ for Varname in Varlist:
     print()
     print('-------------------------------'+Varname)    
     ind1 = fstring1 % (case_start1,Varname,case_end1)
-    #print('xxx opening',ind1)
+    print('ind1 opening',ind1)
     DS1 = xr.open_mfdataset(ind1)
     DS1 = fix_UKMO_ds(ind1, DS1)
     #print('DS1.lon',DS1.lon.values)
@@ -274,7 +276,7 @@ for Varname in Varlist:
     #V1 = Var1.mean(dim='time',keep_attrs=True)
        
     ind2 = fstring2 % (case_start2,Varname,case_end2)
-    #print('opening ind2',ind2)
+    print('opening ind2',ind2)
     #DS2 = xr.open_mfdataset(ind2)
     DS2 = xr.open_mfdataset(ind2)
     DS2 = fix_UKMO_ds(ind1, DS2)
