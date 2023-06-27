@@ -199,19 +199,9 @@ def xr_getvar_sl(VN, DS1, method='surface', verbose=False):
     else:
         V1 = Var1
     return V1
+```
 
-weights = None
-
-Varlist = np.array(['LWP_kg_m2'])
-#Varlist = np.array(['p_surface_Pa'])
-#Varlist = np.array(['T_surface_K'])
-#Varlist = np.array(['AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
-#Varlist = np.array(['Outgoing_SW_Clear_W_m2','p_surface_Pa','T_surface_K','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
-Varlist = np.array(['Outgoing_SW_Clear_W_m2','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
-Varlist = np.array(['cloud_fraction'])
-Varlist = np.array(['Outgoing_SW_Clear_W_m2','net_ToA_SW_W_m2'])
-Varlist = np.array(['net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2'])
-
+```python
 Vdict = {'net_ToA_LW_W_m2':'toa_outgoing_longwave_flux'
         ,'net_ToA_SW_W_m2':'FSNT'
         ,'net_ToA_SW_Clear_W_m2':'FSNTC'
@@ -225,6 +215,248 @@ Vdict = {'net_ToA_LW_W_m2':'toa_outgoing_longwave_flux'
         ,'cloud_fraction':'CFPJR'
         ,'Outgoing_SW_Clear_W_m2':'MFSUTC'
         }
+
+
+```
+
+```python
+def pltfld(DV, titled):
+    
+    cbartitle = None
+    if VN == 'unknown':
+        cbartitle = Varname
+
+    filefmt = 'pdf'
+    
+    if DV.min().values == DV.max().values:
+        print('constant field skipping plot ')
+    else:
+        dlev_rng = {'CDNUMC':np.array([0.,3.e11])/2.,'FSNT':np.array([-45.,45.]),
+                   'TGCLDLWP':np.array([-80.,80.]),'PRECL':np.array([-1.,1.]),
+                    'PRECT':np.array([-5.,5.]),'SWCF':np.array([-45.,45.]),
+                    'CLDLOW':np.array([-10.,10.]),'XXX':np.array([-45.,45.]),
+                   }
+        if DV.name in dlev_rng:
+            dlevs = findNiceContours(dlev_rng[DV.name],nlevs = 15,rmClev=0.,sym=True)
+        else:
+            dlevs = findNiceContours(np.array([DV.min().values,DV.max().values]),nlevs = 15, rmClev=0.,sym=True)
+        #dlevs = [-5.,-2.,-1.,-0.5,-0.2,-0.1,0.1,0.2,0.5,1.,2.,5.]
+        #print('xxx',dlevs)
+        dmap = diverge_map()
+
+        plconf = '3-1x1'
+        #plconf = '1x3'
+        # good setup for 1 row of 3 columns
+        # good setup for 3 rows of 1 columns
+        if plconf == '3-1x1':
+            fig, axes = setfig3b1x1()
+            xr_llhplot(DV, ax=axes,clevs=dlevs,cmap=dmap,title=titled, cbartitle=cbartitle)
+            #plt.savefig(pref1+'_'+Varname+'-D.'+filefmt,format=filefmt,dpi=300)
+            pltllbox([-150.,-110.],[0.,30.])
+            pltllbox([-110.,-70.],[-30.,0.])
+            pltllbox([-25.,15.],[-30.,0.])
+            plt.show()
+
+
+```
+
+```python
+def make_ind1 (REG_ID, Varname, filetype=None):
+    case_start1 = '~/NetCDF_Files/UKESM1_data/'+REG_ID+'_20450101_20490101_mean_'
+    case_start1 = '~/NetCDF_Files/UKESM1_data_v2/Coupled_50Tg/'+REG_ID+'_coupled_50Tgy_20410101_20500101_mean_'
+    case_end1 = ".nc"
+    fstring1 ='%s%s%s' 
+    pref1=REG_ID+'_UKESM1_50Tgpy_Cpld'
+    
+    if filetype == 'Fixed_SST':
+        # fixed SST simulations
+        case_start1 = '~/NetCDF_Files/UKESM1_data/'+REG_ID+'_AtmosOnly_19840101_19880101_mean_'
+        pref1=REG_ID+'_50Tgpy_FixedSST'
+        case_start1 = '~/NetCDF_Files/UKESM1_data_v2/AtmosOnly_25Tg_1979-1989/'+REG_ID+'_AtmosOnly_25Tgy_19790101_19890101_mean_'
+        pref1=REG_ID+'_25Tgpy_FixedSST'
+        #case_start1 = '~/NetCDF_Files/UKESM1_data_v2/AtmosOnly_50Tg_1979-1989/'+REG_ID+'_AtmosOnly_50Tgy_19790101_19890101_mean_'
+        #pref1=REG_ID+'_50Tgpy_FixedSST'
+        case_end1 = ".nc"
+        fstring1 ='%s%s%s' 
+        pref1=REG_ID+'_UKESM1_25Tgpy_Cpld'
+
+    ind1 = fstring1 % (case_start1,Varname,case_end1)
+    return ind1
+
+def make_ind2(REG_ID, Varname, filetype='Fixed_SST'):    
+    case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_20450101_20490101_mean_'
+    case_start2 = '~/NetCDF_Files/UKESM1_data_v2/Coupled_Control/CTL_coupled_20410101_20500101_mean_'
+    case_end2 = ".nc"
+    pref2='UKESM1_control'
+    fstring2 ='%s%s%s' 
+
+    if filetype == 'Fixed_SST':
+        case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_AtmosOnly_19840101_19880101_mean_'
+        case_start2 = '~/NetCDF_Files/UKESM1_data_v2/AtmosOnly_Control_1979-1989/'+'CTL_AtmosOnly_19790101_19890101_mean_'
+        case_end2 = ".nc"
+        pref2='Control'
+        fstring2 ='%s%s%s' 
+        
+    ind2 = fstring2 % (case_start2,Varname,case_end2)
+    return ind2
+
+
+Varname='LWP_kg_m2'
+REG_ID = 'R1_NEP'
+filetype = 'Fixed_SST'
+ind1 = make_ind1(REG_ID,Varname,filetype)
+print('example string used for file 1 open',ind1)
+ind2 = make_ind2(REG_ID,Varname,filetype)
+print('example string used for file 2 open',ind2)
+
+
+```
+
+```python
+# accumulate differences over 3 areas
+
+
+Varlist = np.array(['LWP_kg_m2'])
+#Varlist = np.array(['p_surface_Pa'])
+#Varlist = np.array(['T_surface_K'])
+#Varlist = np.array(['Outgoing_SW_Clear_W_m2','p_surface_Pa','T_surface_K','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+Varlist = np.array(['Outgoing_SW_Clear_W_m2','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+#Varlist = np.array(['cloud_fraction'])
+#Varlist = np.array(['Outgoing_SW_Clear_W_m2','net_ToA_SW_W_m2'])
+#Varlist = np.array(['net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2'])
+#Varlist = np.array(['AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+FSNT1 = None
+FSNT2 = None
+FSNTC1 = None
+FSNTC2 = None
+
+# specify regions (assume lon always specified as west, then east limit)
+xreg = np.array([[-150.,-110.],[-110,-70],[-25.,15.],[170.,-120.],[-170.,-90.]])%360.
+yreg = np.array([[0.,30.],     [-30.,0.], [-30.,0.], [30.,50.],   [-50.,-30.] ])
+namereg = ['NEP','SEP','SEA','NP','SP']
+#xreg = [[0.,360.]]
+#yreg = [[-90.,91.]]
+
+
+reglist = np.array(['R1_NEP','R2_SEP','R3_SEA'])
+
+filetype = None
+filetype = 'Fixed_SST'
+#filetype = 'Coupled'
+
+for Varname in Varlist:
+    print()
+    print('-------------------------------'+Varname)
+    nreg = 0 # is it the start of the region summation
+    for REG_ID in reglist:
+        #ind1 = fstring1 % (case_start1,Varname,case_end1)
+        ind1 = make_ind1(REG_ID,Varname,filetype)
+        print('ind1 opening',ind1)
+        DS1 = xr.open_mfdataset(ind1)
+        DS1 = fix_UKMO_ds(ind1, DS1)
+        #print('DS1.lon',DS1.lon.values)
+        #DS1 = center_time(DS1)
+        VN = Vdict[Varname]
+        print('VN is ',VN)
+        V1 = xr_getvar_sl(VN,DS1,method='maxb850')
+        #print('V1',V1)
+        ind2 = make_ind2(REG_ID,Varname,filetype)
+        print('opening ind2',ind2)
+        #DS2 = xr.open_mfdataset(ind2)
+        DS2 = xr.open_mfdataset(ind2)
+        DS2 = fix_UKMO_ds(ind2, DS2)
+        V2 = xr_getvar_sl(VN,DS2,method='maxb850')
+
+        DV = V1-V2
+        print('DV range', DV.min().values, DV.max().values)
+        weights = None
+        if 'area' in DS1:
+            area = DS1['area']
+        elif 'area' in DS2:
+            area = DS2['area']
+        else:
+            print('calculating areas')
+            lat = V1['lat'].values
+            lon = V1['lon'].values
+            area = make_fvarea(lon,lat)
+        weights = V1.copy()
+        weights.data =area
+        weights.attrs['units']='steradians'
+
+        print(Varname, V1.attrs['long_name'],'Range V1 and V2 ',V1.min().values, V1.max().values, V2.min().values, V2.max().values)
+        V1A = V1.weighted(weights).mean()
+        sV1A = ' (%5.2f)' % V1A
+        V2A = V2.weighted(weights).mean()
+        sV2A = ' (%5.2f)' % V2A
+        DVA = V1A-V2A
+        sDVA = ' (%5.2f)' % DVA
+        print('area avgs '+pref1+' %5.2f' % (V1A.values),' '+pref2+' %5.2f' % (V2A.values),' Delta %5.2f' % (DVA.values))
+        if nreg == 0:
+            V1S = V1
+            V2S = V2
+            DVS = DV
+            nreg = 1
+        else:
+            V1S = V1S + V1
+            V2S = V2S +V2
+            DVS = DVS + DV
+            nreg = nreg+1
+    print(' all regions summed')
+    #V1S = V1S/nreg
+    #V2S = V2S/nreg
+
+    DVA = DVS.weighted(weights).mean()
+    sDVA = ' (%5.2f)' % DVA
+    print('summed area Delta %5.2f' % (DVA.values))
+    pltfld(DVS, "SSE-Ctl"+sDVA)
+    if VN == 'FSNT':
+        print('xxx')
+        FSNT1=V1S
+        FSNT2=V2S
+    elif VN == 'FSNTC':
+        print('yyy')
+        FSNTC1=V1S
+        FSNTC2=V2S
+    print('field processing complete')
+
+if ((FSNT1 is None) or (FSNTC1 is None)):
+    print ('fields for SWCRE not requested')
+else:
+    SWCRE1 = FSNT1-FSNTC1
+    SWCRE1.attrs['long_name'] = 'TOA shortwave CRE'
+    SWCRE1 = SWCRE1.rename('SWCRE')
+    SWCRE2 = FSNT2-FSNTC2
+    SWCRE2.attrs['long_name'] = 'TOA shortwave CRE'
+    SWCRE2 = SWCRE2.rename('SWCRE')
+    DSWCRE = SWCRE1-SWCRE2
+    DSWCREA = DSWCRE.weighted(weights).mean()
+    sDSWCREA = ' (%5.2f)' % DSWCREA
+    print('xxx',sDSWCREA)
+    pltfld(DSWCRE, "SSE-Ctl"+sDSWCREA)
+
+```
+
+```python
+1./0.
+```
+
+```python
+# loop thru variables making plots,
+
+#This cell can plot original fields and diffs
+
+weights = None
+
+Varlist = np.array(['LWP_kg_m2'])
+#Varlist = np.array(['p_surface_Pa'])
+#Varlist = np.array(['T_surface_K'])
+#Varlist = np.array(['AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+#Varlist = np.array(['Outgoing_SW_Clear_W_m2','p_surface_Pa','T_surface_K','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+Varlist = np.array(['Outgoing_SW_Clear_W_m2','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2',
+                   'net_ToA_SW_Clear_W_m2'])
+#Varlist = np.array(['cloud_fraction'])
+#Varlist = np.array(['Outgoing_SW_Clear_W_m2','net_ToA_SW_W_m2'])
+#Varlist = np.array(['net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2'])
 
 
 # specify regions (assume lon always specified as west, then east limit)
@@ -252,13 +484,15 @@ case_end2 = ".nc"
 pref2='UKESM1_control'
 fstring2 ='%s%s%s' 
 
-if False:
+if True:
     # fixed SST simulations
     case_start1 = '~/NetCDF_Files/UKESM1_data/'+REG_ID+'_AtmosOnly_19840101_19880101_mean_'
     pref1=REG_ID+'_50Tgpy_FixedSST'
     case_start1 = '~/NetCDF_Files/UKESM1_data_v2/AtmosOnly_25Tg_1979-1989/'+REG_ID+'_AtmosOnly_25Tgy_19790101_19890101_mean_'
     pref1=REG_ID+'_25Tgpy_FixedSST'
-    case_end1 = ".nc"
+    case_start1 = '~/NetCDF_Files/UKESM1_data_v2/AtmosOnly_50Tg_1979-1989/'+REG_ID+'_AtmosOnly_50Tgy_19790101_19890101_mean_'
+    #pref1=REG_ID+'_50Tgpy_FixedSST'
+    #case_end1 = ".nc"
     fstring1 ='%s%s%s' 
 
     case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_AtmosOnly_19840101_19880101_mean_'
@@ -393,10 +627,6 @@ for Varname in Varlist:
         
     print('field processing complete')
 
-```
-
-```python
-1./0.
 ```
 
 ```python
