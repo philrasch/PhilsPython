@@ -8,9 +8,9 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.14.5
   kernelspec:
-    display_name: Python [conda env:pjrpy3] *
+    display_name: Python [conda env:.conda-pjrpy3] *
     language: python
-    name: conda-env-pjrpy3-py
+    name: conda-env-.conda-pjrpy3-py
 ---
 
 **compare two cases over the globe assuming they are on lat/lon grid at same resolution**
@@ -123,12 +123,19 @@ def fix_UKMO_ds(filename, dsin: xr.Dataset) -> xr.Dataset:
             ds = ds.rename({Vname:'TS'})
             #print('fixed TS')
             
-        if (('_SW_W' in filename) & (Vname == 'unknown')):
+        if (('net_ToA_SW_W' in filename) & (Vname == 'unknown')):
             ds[Vname].attrs['UKESM name'] = Vname
             ds[Vname].attrs['units'] = 'W/m2'
             ds[Vname].attrs['long_name'] = 'Net TOA Shortwave'
             ds = ds.rename({Vname:'FSNT'})
             #print('fixed FSNT')
+            
+        if (('net_ToA_SW_C' in filename) & (Vname == 'unknown')):
+            ds[Vname].attrs['UKESM name'] = Vname
+            ds[Vname].attrs['units'] = 'W/m2'
+            ds[Vname].attrs['long_name'] = 'Net TOA Shortwave Clear'
+            ds = ds.rename({Vname:'FSNTC'})
+            #print('fixed FSNT'
             
         if (('_SW_Clear' in filename) & (Vname == 'toa_outgoing_shortwave_flux_assuming_clear_sky')):
             ds[Vname] = -ds[Vname]
@@ -203,9 +210,11 @@ Varlist = np.array(['LWP_kg_m2'])
 Varlist = np.array(['Outgoing_SW_Clear_W_m2','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
 Varlist = np.array(['cloud_fraction'])
 Varlist = np.array(['Outgoing_SW_Clear_W_m2','net_ToA_SW_W_m2'])
-                   
+Varlist = np.array(['net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2'])
+
 Vdict = {'net_ToA_LW_W_m2':'toa_outgoing_longwave_flux'
         ,'net_ToA_SW_W_m2':'FSNT'
+        ,'net_ToA_SW_Clear_W_m2':'FSNTC'
         ,'AOD_550nm':'AOD'
         ,'LWP_kg_m2':'TGCLDLWP'
         ,'p_surface_Pa':'PS'
@@ -232,25 +241,28 @@ REG_ID = 'R3_SEA'
 
 # coupled simulations
 case_start1 = '~/NetCDF_Files/UKESM1_data/'+REG_ID+'_20450101_20490101_mean_'
+case_start1 = '~/NetCDF_Files/UKESM1_data_v2/Coupled_50Tg/'+REG_ID+'_coupled_50Tgy_20410101_20500101_mean_'
 case_end1 = ".nc"
 fstring1 ='%s%s%s' 
 pref1=REG_ID+'_UKESM1_50Tgpy_Cpld'
 
 case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_20450101_20490101_mean_'
+case_start2 = '~/NetCDF_Files/UKESM1_data_v2/Coupled_Control/CTL_coupled_20410101_20500101_mean_'
 case_end2 = ".nc"
 pref2='UKESM1_control'
 fstring2 ='%s%s%s' 
 
-if True:
+if False:
     # fixed SST simulations
     case_start1 = '~/NetCDF_Files/UKESM1_data/'+REG_ID+'_AtmosOnly_19840101_19880101_mean_'
+    pref1=REG_ID+'_50Tgpy_FixedSST'
     case_start1 = '~/NetCDF_Files/UKESM1_data_v2/AtmosOnly_25Tg_1979-1989/'+REG_ID+'_AtmosOnly_25Tgy_19790101_19890101_mean_'
+    pref1=REG_ID+'_25Tgpy_FixedSST'
     case_end1 = ".nc"
     fstring1 ='%s%s%s' 
-    pref1=REG_ID+'_50Tgpy_FixedSST'
 
     case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_AtmosOnly_19840101_19880101_mean_'
-    case_start2 = '/e3sm_prod/phil/NetCDF_Files/UKESM1_data_v2/AtmosOnly_Control/'+REG_ID+'_AtmosOnly_19790101_19890101_mean_'
+    case_start2 = '~/NetCDF_Files/UKESM1_data_v2/AtmosOnly_Control_1979-1989/'+'CTL_AtmosOnly_19790101_19890101_mean_'
     case_end2 = ".nc"
     pref2='Control'
     fstring2 ='%s%s%s' 
@@ -357,15 +369,16 @@ for Varname in Varlist:
         # good setup for 3 rows of 1 columns
         if plconf == '3-1x1':
             
-            fig, axes = setfig3b1x1()
-            xr_llhplot(V1, ax=axes,clevs=clevs,title=pref1+sV1A, cbartitle=cbartitle)
-            plt.savefig(pref1+'_'+Varname+'.'+filefmt,format=filefmt,dpi=300)
-            plt.show()
-            
-            fig, axes = setfig3b1x1()
-            xr_llhplot(V2, ax=axes,clevs=clevs,ylabels=False,title=pref2+sV2A, cbartitle=cbartitle)
-            plt.savefig(pref2+'_'+Varname+'.'+filefmt,format=filefmt,dpi=300)
-            plt.show()
+            if False:
+                fig, axes = setfig3b1x1()
+                xr_llhplot(V1, ax=axes,clevs=clevs,title=pref1+sV1A, cbartitle=cbartitle)
+                plt.savefig(pref1+'_'+Varname+'.'+filefmt,format=filefmt,dpi=300)
+                plt.show()
+
+                fig, axes = setfig3b1x1()
+                xr_llhplot(V2, ax=axes,clevs=clevs,ylabels=False,title=pref2+sV2A, cbartitle=cbartitle)
+                plt.savefig(pref2+'_'+Varname+'.'+filefmt,format=filefmt,dpi=300)
+                plt.show()
             
             fig, axes = setfig3b1x1()
             xr_llhplot(DV, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA, cbartitle=cbartitle)
@@ -380,6 +393,10 @@ for Varname in Varlist:
         
     print('field processing complete')
 
+```
+
+```python
+1./0.
 ```
 
 ```python
@@ -521,10 +538,6 @@ if plconf == '3-1x1':
 
 print('field processing complete')
 
-```
-
-```python
-1./0.
 ```
 
 ```python
