@@ -115,7 +115,7 @@ def fix_UKMO_ds(filename, dsin: xr.Dataset) -> xr.Dataset:
             #ds[Vname] = ds[Vname]/100.
             #ds[Vname].attrs['units'] = 'hPa'
             #ds[Vname].attrs['long_name'] = ds[Vname].attrs['standard_name']
-            ds = ds.rename({Vname:'CFPJR'})
+            ds = ds.rename({Vname:'CLOUD'})
         
         if (('T_surface_K' in filename) & (Vname == 'surface_temperature')):
             ds[Vname].attrs['UKESM name'] = Vname
@@ -164,7 +164,7 @@ def xr_getvar_sl(VN, DS1, method='surface', verbose=False):
     if 'model_level_number' in dimlist:
         level_height = xr_getvar('level_height',DS1)
         sigma = xr_getvar('sigma',DS1)
-        print('sigma',sigma.values)
+        #print('sigma',sigma.values)
         surface_altitude = xr_getvar('surface_altitude',DS1)
         altitude = level_height + (sigma * surface_altitude)
         altitude.attrs['long_name'] = 'altitude above mean sea-level'
@@ -174,28 +174,31 @@ def xr_getvar_sl(VN, DS1, method='surface', verbose=False):
             V1 = Var1.isel(model_level_number=0)
             V1.attrs['long_name'] = V1.attrs['long_name'] + ' (surface level)'
         elif method == 'maxb850':
-            i = 1
-            j = 1
-            print('method:max below 850')
+            i = 0
+            j = 0
+            #print('method:max below 850')
             dz1 = altitude - surface_altitude   # height above surface
-            print('altitude',altitude[:,i,j].values,altitude)
-            print('surface_altitude',surface_altitude[i,j].values,surface_altitude)
-            print('dz1(i,j)',dz1[:,i,j].values)
+            #print('altitude',altitude[:,i,j].values)
+            #print('surface_altitude',surface_altitude[i,j].values,surface_altitude)
+            #print('dz1(i,j)',dz1[:,i,j].values)
             dz2 = (sigma - 1)*surface_altitude + level_height  # height above sea level
-            print('dz2(i,j)',dz2[:,i,j].values)
+            #print('dz2(i,j)',dz2[:,i,j].values)
             pmb = 850.
             psmb = 1000.
             scaleheight = 8.4e3
             altmb = -np.log(pmb/psmb)*scaleheight
-            print('altmb is ', altmb)
+            #print('altmb is ', altmb)
             V1 = Var1.copy()
-            V1.values = dz1.values ### for the moment, overwrite field with height above surface height
-            print('V1',V1[:,i,j].values)
-            V2 = V1.where(dz1 <= altmb+50.)
+            #V1.values = dz1.values ### for the moment, overwrite field with height above surface height
+            #print('V1',V1[:,i,j].values)
+            #V2 = V1.where(dz1 <= altmb+50.)
+            V2 = V1.where(altitude <= altmb+50.)
             V3 = V2.max(dim='model_level_number')
-            V3.attrs['long_name'] = 'max value below pmb of '+V2.attrs['long_name']
+            #V3.attrs['long_name'] = 'max value below 850hPa of '+V2.attrs['long_name']
+            V3.attrs['long_name'] = 'max value below 850hPa of '+V2.name
             V1 = V3
-            
+            #print('V3',V3[i,j].values)
+            #1./0.
     else:
         V1 = Var1
     return V1
@@ -212,7 +215,7 @@ Vdict = {'net_ToA_LW_W_m2':'toa_outgoing_longwave_flux'
         ,'precip_rate_kg_m2_sec':'PRECT'
         ,'PBL_depth_metres':'PBLH'
         ,'cloudtop_r_e_microns':'REPJR'
-        ,'cloud_fraction':'CFPJR'
+        ,'cloud_fraction':'CLOUD'
         ,'Outgoing_SW_Clear_W_m2':'MFSUTC'
         }
 
@@ -222,9 +225,7 @@ Vdict = {'net_ToA_LW_W_m2':'toa_outgoing_longwave_flux'
 ```python
 def pltfld(DV, titled):
     
-    cbartitle = None
-    if VN == 'unknown':
-        cbartitle = Varname
+    cbartitle = DV.long_name
 
     filefmt = 'pdf'
     
@@ -251,10 +252,12 @@ def pltfld(DV, titled):
         if plconf == '3-1x1':
             fig, axes = setfig3b1x1()
             xr_llhplot(DV, ax=axes,clevs=dlevs,cmap=dmap,title=titled, cbartitle=cbartitle)
-            #plt.savefig(pref1+'_'+Varname+'-D.'+filefmt,format=filefmt,dpi=300)
+            fname = pref1+'_'+DV.name+'-D.'+filefmt
+            print('fname',fname)
             pltllbox([-150.,-110.],[0.,30.])
             pltllbox([-110.,-70.],[-30.,0.])
             pltllbox([-25.,15.],[-30.,0.])
+            plt.savefig(fname,format=filefmt,dpi=300)
             plt.show()
 
 
@@ -305,8 +308,10 @@ Varname='LWP_kg_m2'
 REG_ID = 'R1_NEP'
 filetype = 'Fixed_SST'
 ind1 = make_ind1(REG_ID,Varname,filetype)
+pref1 = 'R1+R2+R3_25Tgpyr'
 print('example string used for file 1 open',ind1)
 ind2 = make_ind2(REG_ID,Varname,filetype)
+pref2 = 'Control'
 print('example string used for file 2 open',ind2)
 
 
@@ -320,7 +325,8 @@ Varlist = np.array(['LWP_kg_m2'])
 #Varlist = np.array(['p_surface_Pa'])
 #Varlist = np.array(['T_surface_K'])
 #Varlist = np.array(['Outgoing_SW_Clear_W_m2','p_surface_Pa','T_surface_K','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
-Varlist = np.array(['Outgoing_SW_Clear_W_m2','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+Varlist = np.array(['Outgoing_SW_Clear_W_m2','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2',
+                    'net_ToA_SW_Clear_W_m2','cloud_fraction'])
 #Varlist = np.array(['cloud_fraction'])
 #Varlist = np.array(['Outgoing_SW_Clear_W_m2','net_ToA_SW_W_m2'])
 #Varlist = np.array(['net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2'])

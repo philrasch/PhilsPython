@@ -60,11 +60,13 @@ Varlist = np.array(['FLNT','FSNT','TS','PRECC','PRECL','CLDLOW','CLDTOT','LWCF',
 #Varlist = np.array(['TS','TMQ','PRECT'])
 #Varlist = np.array(['RESTOM','LWCF','SWCF','FLNT','FSNT'])
 #Varlist = np.array(['AEROD_v'])
-Varlist = np.array(['CLDLOW','TGCLDLWP','PRECL','PRECC','SWCF'])
 Varlist = np.array(['FSNT','FSNTC','FLNT','FLNTC'])
 Varlist = np.array(['SWCF','TGCLDLWP','CLDLOW'])
 #Varlist = np.array(['FSUTOA','FSNT','FSNTC'])
 Varlist = np.array(['PRECC'])
+Varlist = np.array(['CLDTOT','TGCLDLWP','FSNT','FSNTC','AODVIS'])
+Varlist = np.array(['CLDTOT'])
+
 
 # specify regions (assume lon always specified as west, then east limit)
 xreg = np.array([[-150.,-110.],[-110,-70],[-25.,15.],[170.,-120.],[-170.,-90.]])%360.
@@ -86,18 +88,19 @@ case_end2 = ".nc"
 pref2='CESMcontrol'
 fstring2 ='%s%s%s' 
 
-if True:
+if False:
 
-    case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.y1-5.FORCING.nc"
+    case_start1 = "/e3sm_prod/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.y1-5.FORCING.nc"
     case_end1 = ""
     pref1='E3SM_CN600'
     fstring1 ='%s%.0s%.0s' 
 
-    case_start2 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_CNTL_remapped/20220930.v2.LR.F2010.E1_CNTL.eam.h0.y1-14.FORCING.nc"
+    case_start2 = "/e3sm_prod/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_CNTL_remapped/20220930.v2.LR.F2010.E1_CNTL.eam.h0.y1-14.FORCING.nc"
     case_end2 = ""
     fstring2 ='%s%.0s%.0s' 
     pref2='E3SMcontrol'
 
+if False: # E3SM CDNC2000 -1.8W/m2 CI
     #case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.1-11"
     case_start1 = "/e3sm_prod/phil/climo/e3sm/20221123.v2.LR.F2010.E1_R1-3_CDNC2000/fv192x288/20221123.v2.LR.F2010.E1_R1-3_CDNC2000.eam.h0.1-11."
     case_end1 = ".nc"
@@ -111,6 +114,34 @@ if True:
     fstring2 ='%s%.0s%.0s' 
     fstring2 ='%s%s%s' 
     pref2='E3SMcontrol'
+    
+if False: # E3SM 50Tg/yr
+    #case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.1-11"
+    case_start1 = "/e3sm_prod/phil/climo/e3sm/20230426.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01/20230426.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01_ANN_000101_001112_climo_fv192x288.nc"
+    case_end1 = ""
+    pref1='E3SM_50Tgpy'
+    fstring1 ='%s%.0s%.0s' 
+    #fstring1 ='%s%s%s' 
+
+    #case_start2 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_CNTL_remapped/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14"
+    case_start2 = "/e3sm_prod/phil/climo/e3sm/20220930.v2.LR.F2010.E1_CNTL/fv192x288/20220930.v2.LR.F2010.E1_CNTL.eam.h0.1-14."
+    case_end2 = ".nc"
+    fstring2 ='%s%.0s%.0s' 
+    fstring2 ='%s%s%s' 
+    pref2='E3SMcontrol'
+
+if True: # CESM 7.5 Tg/yr
+    case_start1 = "/e3sm_prod/phil/climo/cesm/F2010climo.ss_NEP_SEP_SEA.1.5Tg/fv192x288/F2010climo.ss_NEP_SEP_SEA.1.5Tg.cam.h0."
+    case_end1 = ".1-25.nc"
+    pref1='CESM_7.5Tgpyr'
+    fstring1 ='%s%.0s%.0s' 
+    fstring1 ='%s%s%s' 
+
+    case_start2 = "/e3sm_prod/phil/climo/cesm/Fixed_SST/fv192x288/Fixed_SST.cam.h0.1-20."
+    case_end2 = ".nc"
+    fstring2 ='%s%.0s%.0s' 
+    fstring2 ='%s%s%s' 
+    pref2='CESMcontrol'
 
 
 
@@ -138,7 +169,7 @@ for Varname in Varlist:
     ind1 = fstring1 % (case_start1,Varname,case_end1)
     print('opening',ind1)
     DS1 = xr.open_mfdataset(ind1)
-    print('xxx',DS1.time)
+    #print('xxx',DS1.time)
     DS1 = center_time(DS1)
     Var1 = xr_getvar(Varname,DS1)
     V1 = Var1.mean(dim='time',keep_attrs=True)
@@ -150,9 +181,9 @@ for Varname in Varlist:
 
     #DS2 = center_time(DS2)
     Var2 = xr_getvar(Varname,DS2)
-    print('yyy',Var2)
-    print('yy2',Var2.lat)
-    print('yy3',Var2.time)
+    #print('yyy',Var2)
+    #print('yy2',Var2.lat)
+    #print('yy3',Var2.time)
     V2 = Var2.mean(dim='time',keep_attrs=True)
 
     DV = V1-V2
@@ -185,12 +216,14 @@ for Varname in Varlist:
         clev_rng = {'CDNUMC':np.array([0.,3.e11]),'FSNT':np.array([40.,360]),
                     'TGCLDLWP':np.array([0.,280.]),'PRECL':np.array([0.,10.]),
                     'PRECC':np.array([0.,16.]),'SWCF':np.array([-140.,0.]),
-                    'CLDLOW':np.array([0.,90.]),'XXX':np.array([-45.,45.]),
+                    'CLDLOW':np.array([0.,90.]),'AODVIS':np.array([0,0.2]),
+                    'XXX':np.array([-45.,45.]),
                    }
         dlev_rng = {'CDNUMC':np.array([0.,3.e11])/2.,'FSNT':np.array([-45.,45.]),
                    'TGCLDLWP':np.array([-80.,80.]),'PRECL':np.array([-1.,1.]),
                     'PRECC':np.array([-1.,1.]),'SWCF':np.array([-45.,45.]),
-                    'CLDLOW':np.array([-10.,10.]),'XXX':np.array([-45.,45.]),
+                    'CLDLOW':np.array([-10.,10.]),'AODVIS':np.array([-.9,.9]),
+                    'CLDTOT':np.array([-10.,10.]),
                    }
         if Varname in clev_rng:
             clevs = findNiceContours(clev_rng[Varname],nlevs = 12)
@@ -205,7 +238,7 @@ for Varname in Varlist:
         dmap = diverge_map()
 
         plconf = '3-1x1'
-        plconf = '1x3'
+        #plconf = '1x3'
 
         # good setup for 1 row of 3 columns
         if plconf == '1x3':
@@ -224,23 +257,24 @@ for Varname in Varlist:
         # good setup for 3 rows of 1 columns
         if plconf == '3-1x1':
             
-            fig, axes = setfig3b1x1()
-            print('V1XXX',V1)
-            xr_llhplot(V1, ax=axes,clevs=clevs,title=pref1+sV1A)
-            pltllbox([-150.,-110.],[0.,30.])
-            pltllbox([-110.,-70.],[-30.,0.])
-            pltllbox([-25.,15.],[-30.,0.])
-            plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
-            plt.show()
-            
-            fig, axes = setfig3b1x1()
-            xr_llhplot(V2, ax=axes,clevs=clevs,ylabels=False,title=pref2+sV2A)
-            pltllbox([-150.,-110.],[0.,30.])
-            pltllbox([-110.,-70.],[-30.,0.])
-            pltllbox([-25.,15.],[-30.,0.])
-            plt.savefig(pref2+'_'+Varname+'.pdf',format='pdf',dpi=300)
-            plt.show()
-            
+            if False:
+                fig, axes = setfig3b1x1()
+                #print('V1XXX',V1)
+                xr_llhplot(V1, ax=axes,clevs=clevs,title=pref1+sV1A)
+                pltllbox([-150.,-110.],[0.,30.])
+                pltllbox([-110.,-70.],[-30.,0.])
+                pltllbox([-25.,15.],[-30.,0.])
+                plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
+                plt.show()
+
+                fig, axes = setfig3b1x1()
+                xr_llhplot(V2, ax=axes,clevs=clevs,ylabels=False,title=pref2+sV2A)
+                pltllbox([-150.,-110.],[0.,30.])
+                pltllbox([-110.,-70.],[-30.,0.])
+                pltllbox([-25.,15.],[-30.,0.])
+                plt.savefig(pref2+'_'+Varname+'.pdf',format='pdf',dpi=300)
+                plt.show()
+
             fig, axes = setfig3b1x1()
             xr_llhplot(DV, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA)
             pltllbox([-150.,-110.],[0.,30.])
@@ -265,7 +299,7 @@ def getvarDSM(Varname,fstring,case_start,case_end):
        get variable from file specifying the formatting
     """
     ind = fstring % (case_start,Varname,case_end)
-    #print('opening',ind1)
+    print('getfarDSM opening',ind)
     DS = xr.open_mfdataset(ind)
     DS.coords['lon'] = (DS.coords['lon'] + 180) % 360 - 180
     DS = DS.sortby(DS.lon)
@@ -335,16 +369,23 @@ def derfld(VN, fstring1, case_start1, case_end1):
 #PRECTA = PRECT.weighted(weights).mean()
 #print('PRECTA',PRECTA.values)
 #xr_llhplot(PRECT, ax=axes)#,clevs=clevs,title=pref1+sV1A)
-#ICNUMLIQ = derfld('ICNUMLIQPBLT',fstring1, case_start1, case_end1)
-ICNUMLIQ = derfld('ICNUMLIQPBLT',fstring2, case_start2, case_end2)
-xr_llhplot(ICNUMLIQ, ax=axes)#,clevs=clevs,title=pref1+sV1A)
+if True:
+    ICNUMLIQ1 = derfld('ICNUMLIQPBLT',fstring1, case_start1, case_end1)
+    xr_llhplot(ICNUMLIQ1, ax=axes)#,clevs=clevs,title=pref1+sV1A)
+    pltllbox([-150.,-110.],[0.,30.])
+    pltllbox([-110.,-70.],[-30.,0.])
+    pltllbox([-25.,15.],[-30.,0.])
+    plt.show()
+    
+ICNUMLIQ2 = derfld('ICNUMLIQPBLT',fstring2, case_start2, case_end2)
+xr_llhplot(ICNUMLIQ2, ax=axes)#,clevs=clevs,title=pref1+sV1A)
 #plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
 pltllbox([-150.,-110.],[0.,30.])
 pltllbox([-110.,-70.],[-30.,0.])
 pltllbox([-25.,15.],[-30.,0.])
 plt.show()
 
-PRECT = derfld('PRECT',fstring1, case_start1, case_end1)
+#PRECT = derfld('PRECT',fstring1, case_start1, case_end1)
 
 ```
 
