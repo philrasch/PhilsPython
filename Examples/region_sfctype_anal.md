@@ -5,11 +5,11 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.0
+      jupytext_version: 1.14.5
   kernelspec:
-    display_name: Python [conda env:.conda-pjrpy3]
+    display_name: Python [conda env:pjrpy3] *
     language: python
-    name: conda-env-.conda-pjrpy3-py
+    name: conda-env-pjrpy3-py
 ---
 
 ```python
@@ -67,6 +67,10 @@ name, abbrev, reg = "NE_Pacific", "NEP", np.array([[-150%360.,0.],[-110.%360,0.]
 regList, nameList, abbrevList = regList + [reg], nameList + [name], abbrevList + [abbrev]
 
 name, abbrev, reg = "SE_Atlantic", "SEA", np.array([[-25.,-30.],[15,-30.],[15,0.],[-25.,0.]])
+regList, nameList, abbrevList = regList + [reg], nameList + [name], abbrevList + [abbrev]
+
+o = 360.
+name, abbrev, reg = "Northern_Oceans", "NO", np.array([[-179.+o,60.],[179.+o,60.],[179.+o,80.],[-179.+o,80.]])
 regList, nameList, abbrevList = regList + [reg], nameList + [name], abbrevList + [abbrev]
 
 SDregions = regionmask.Regions(regList, names=nameList, abbrevs=abbrevList, name="SEED",overlap=True)
