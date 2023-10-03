@@ -105,6 +105,11 @@ case_end2 = '_20230405.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01_000101_002112.nc'
 pref2='28Tg/yr,R1-3'
 fstring2 ='%s%s%s'
 
+case_start2 = '/e3sm_prod/phil/tseries/e3sm/20230423.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01/'
+case_end2 = '_20230423.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01_000101_001112.nc'
+pref2='42Tg/yr,R1-3'
+fstring2 ='%s%s%s'
+
 if False:
     # working from the time series files
     #case_start2 = '/e3sm_prod/mingxuan/archive/20230330.v2.LR.F2010.MCB-SSLT-EM.R1-3.test02/reshaped/20230330.v2.LR.F2010.MCB-SSLT-EM.R1-3.test02.eam.h0.1-11.'
@@ -182,9 +187,10 @@ for Varname in Varlist:
     print('DV range, mean', DV.min().values, DV.max().values, DVM)
     print(Varname, V1.attrs['long_name'],'Range V1 and V2 ',V1.min().values, V1.max().values, V2.min().values, V2.max().values)
     DV.plot()
+    print('time yrs', time)
     plt.plot([time[0],time[-1]],[DVM,DVM])
     plt.plot([time[1],time[6]],[DVM2,DVM2])
-    plt.plot([time[1],time[11]],[DVM3,DVM3])
+    plt.plot([time[1],time[-1]],[DVM3,DVM3])
 
     #print('xxx',time[0])
     plt.show()
