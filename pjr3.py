@@ -1595,7 +1595,7 @@ def add_prov(infile):
     """Usage: add_prov(infile)
     adds some provanence to the metadata of a PDF file
 
-    WARNING: when the function is invoked from a markdown version of the
+    WARNING: function fails when invoked from a markdown version of in a jupyter notebook (ipynbname deficiency)
     """
 
 
@@ -1613,16 +1613,16 @@ def add_prov(infile):
 
     try:
         get_ipython()
-        #print('xxx')
+        print('xx1 adprov')
         try:
             nb_fname = ipynbname.name()
-            nb_path = ipynbname.path()
-            #print('nbname',nb_fname,nb_path)
-            scriptname = nb_fname
         except:
-            scriptname = "my_prov can't identify scriptname with md ext on jupyter notebook"
+            nb_fname = "unknown_not_ipynb_file"
             # displaying the warning message 
-            warnings.warn("my_prov: Warning Message: can't identify scriptname with md extension (use ipynd file)")
+            warnings.warn("my_prov: Warning Message: can't identify scriptname with md extension (run notebook on ipynb file)")
+        #nb_path = ipynbname.path()
+        #print('nb_fname',nb_fname)
+        scriptname = nb_fname
     except:
         scriptname = os.path.basename(sys.argv[0])
         #print('sc2',scriptname)
