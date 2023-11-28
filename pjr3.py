@@ -1442,7 +1442,7 @@ def make_fvarea(lon,lat,alt=None):
     yw = np.zeros(len(lat)+1)
     # walls in degrees
     yw[1:-1] = (lat[1:] + lat[:-1]) / 2
-    if (np.abs(lat[-1]-lat[0])-90.) < 1.e-4:
+    if (np.abs(lat[-1]-lat[0])-180.) < 1.e-4:
         #print('polepoint')
         yw[0] = lat[0]
         yw[-1] = lat[-1]
