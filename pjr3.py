@@ -1675,5 +1675,45 @@ def tavg_mon_wt(xr_var):
     # Return the weighted average
     return wavg
 
+def reconcile_xr_coords(V1, V2, rtol=1.e-8):
+    '''
+    usage:
+        V1, V2 = reconcile_xr_coords(V1, V2, rtol=)
+        
+    check whether the Coordinates in two xr DataArrays are close. 
+        if they are identical do nothing
+        if they differ below rtol, then sent V2 coordinat to the V1 values
+        if they exceed rtol then issue an error message and stop
+        
+    The code is still pretty rough. It could be improved by 
+        allowing an exclude list, 
+        checking whether coords are the same in V1 and V2
+        and probably by adapting it to work on xr DataSets too.
+    
+    '''
+    coords = V1.coords
+    for c in coords:
+        #print(c)
+        if c == 'time':
+            #print('skip')
+            continue
+        V1cv = V1[c].values
+        V2cv = V2[c].values
+        relerr = 2.*np.abs(V1cv-V2cv)/(np.abs(V1cv+V2cv)+1.e-16)
+        relerrm = np.max(relerr)
+        #print('relerrm',relerrm)
+        #xr.testing.assert_allclose(V1[c],V2[c])
+        if (relerrm == 0.):
+            continue
+        if (relerrm < rtol):
+            print('over-write coord ', c)
+            V2.coords[c] = V1.coords[c]
+            continue
+        print('large error', relerrm,' in coord ',c)
+        print('V1 coord',V1[c].values)
+        print('V2 coord',V2[c].values)
+        1./0
+    return V1, V2;
+
 print ("pjr3.py complete")
 
