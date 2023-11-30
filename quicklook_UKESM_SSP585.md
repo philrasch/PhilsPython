@@ -5,11 +5,11 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.5
+      jupytext_version: 1.15.2
   kernelspec:
-    display_name: Python [conda env:pjrpy3] *
+    display_name: pjrpy3
     language: python
-    name: conda-env-pjrpy3-py
+    name: pjrpy3
 ---
 
 ```python
@@ -41,6 +41,10 @@ Varlist = np.array(['ts'])
 # coupled simulations
 case_start1 = '~/NetCDF_Files/UKESM1_data_v2/Coupled_SSP585/'
 case_end1 = '_Amon_UKESM1-0-LL_ssp585_r1i1p1f2_gn_205001-210012.nc'
+case_end1 = '_Amon_UKESM1-0-LL_ssp585_r1i1p1f2_gn_201501-204912.nc'
+case_end1 = '_Amon_UKESM1-0-LL_ssp585_r1i1p1f2_gn_*.nc'
+case_start1 = '~/NetCDF_Files/UKESM1_data_v2/Coupled_SSP245/'
+case_end1 = '_Amon_UKESM1-0-LL_ssp245_r1i1p1f2_gn_*.nc'
 fstring1 ='%s%s%s' 
 REG_ID=''
 pref1=REG_ID+'_UKESM1_50Tgpy_Cpld'
@@ -49,7 +53,7 @@ Varname=Varlist[0]
 ind1 = fstring1 % (case_start1,Varname,case_end1)
 print('example string used for file open',ind1)
 DS1 = xr.open_mfdataset(ind1)
-print,DS1
+print(DS1)
 time = DS1['time']
 time_bnds = DS1['time_bnds']
 Var = DS1[Varname]
@@ -105,9 +109,10 @@ def fix_UKMOds_ts(filename, dsin: xr.Dataset) -> xr.Dataset:
 ```
 
 ```python
-decade = 6
+decade = 4
 ybeg = 2000+10*decade+1
 yend = 2000+10*(decade+1)+1
+#yend = 2000+10*(decade+1)
 fstring1 ='%d%s' 
 tbeg = fstring1 % (ybeg,"-01-01")
 tend = fstring1 % (yend,"-01-01")
@@ -118,17 +123,23 @@ DS2.time
 
 ```python
 DS2 = fix_UKMOds_ts(ind1, DS1)
-#print(DS2)
-#aa = DS2['area']
-#print('aa',aa)
-DS2 = DS2.sel(time=slice("2060-01-01", "2070-01-01")).mean('time')
+print(DS2)
+aa = DS2['area']
+print('aa',aa.sum().values,4*np.pi)
+DS2 = DS2.sel(time=slice(tbeg, tend)).mean('time')
 V1 = DS2['ts']
 #print('V1',V1)
 #DS2
-DS2.to_netcdf("saved_on_disk.nc")
+weights = DS2.area
+V1A = V1.weighted(weights).mean()
+print('V1A',V1A.values)
+if False:
+    # write the decadal average to a netCDF file
+    DS2.to_netcdf("saved_on_disk.nc")
 ```
 
 ```python
+
 fig, axes = setfig3b1x1()
 #print('V1XXX',V1)
 clevs = findNiceContours(V1.values,nlevs = 12)
@@ -138,5 +149,9 @@ xr_llhplot(V1, ax=axes,clevs=clevs,title='title')
 #pltllbox([-25.,15.],[-30.,0.])
 #plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
 plt.show()
+
+```
+
+```python
 
 ```

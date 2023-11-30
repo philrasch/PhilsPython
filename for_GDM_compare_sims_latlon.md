@@ -6,11 +6,11 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.5
+      jupytext_version: 1.15.2
   kernelspec:
-    display_name: Python [conda env:.conda-pjrpy3] *
+    display_name: pjrpy3
     language: python
-    name: conda-env-.conda-pjrpy3-py
+    name: pjrpy3
 ---
 
 **compare two cases over the globe assuming they are on lat/lon grid at same resolution**
@@ -66,6 +66,8 @@ Varlist = np.array(['SWCF','TGCLDLWP','CLDLOW'])
 Varlist = np.array(['PRECC'])
 Varlist = np.array(['CLDTOT','TGCLDLWP','FSNT','FSNTC','AODVIS'])
 Varlist = np.array(['CLDTOT'])
+Varlist = np.array(['TGCLDLWP'])
+
 
 
 # specify regions (assume lon always specified as west, then east limit)
@@ -115,7 +117,7 @@ if False: # E3SM CDNC2000 -1.8W/m2 CI
     fstring2 ='%s%s%s' 
     pref2='E3SMcontrol'
     
-if False: # E3SM 50Tg/yr
+if True: # E3SM 50Tg/yr
     #case_start1 = "/scratch2/PJR/haruki_workdir/E3SM_MCB/F2010.E1_R1-3_C600_remapped/20221018.v2.LR.F2010.E1_R1-3_CDNC600.eam.h0.1-11"
     case_start1 = "/e3sm_prod/phil/climo/e3sm/20230426.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01/20230426.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01_ANN_000101_001112_climo_fv192x288.nc"
     case_end1 = ""
@@ -130,7 +132,7 @@ if False: # E3SM 50Tg/yr
     fstring2 ='%s%s%s' 
     pref2='E3SMcontrol'
 
-if True: # CESM 7.5 Tg/yr
+if False: # CESM 7.5 Tg/yr
     case_start1 = "/e3sm_prod/phil/climo/cesm/F2010climo.ss_NEP_SEP_SEA.1.5Tg/fv192x288/F2010climo.ss_NEP_SEP_SEA.1.5Tg.cam.h0."
     case_end1 = ".1-25.nc"
     pref1='CESM_7.5Tgpyr'
@@ -220,7 +222,7 @@ for Varname in Varlist:
                     'XXX':np.array([-45.,45.]),
                    }
         dlev_rng = {'CDNUMC':np.array([0.,3.e11])/2.,'FSNT':np.array([-45.,45.]),
-                   'TGCLDLWP':np.array([-80.,80.]),'PRECL':np.array([-1.,1.]),
+                   'TGCLDLWP':np.array([-50.,50.]),'PRECL':np.array([-1.,1.]),
                     'PRECC':np.array([-1.,1.]),'SWCF':np.array([-45.,45.]),
                     'CLDLOW':np.array([-10.,10.]),'AODVIS':np.array([-.9,.9]),
                     'CLDTOT':np.array([-10.,10.]),
@@ -291,15 +293,14 @@ for Varname in Varlist:
 ```
 
 ```python
-# sample multilevel field on hybrid levels
-fig, axes = setfig3b1x1()
+
 
 def getvarDSM(Varname,fstring,case_start,case_end):
     """getvar DSM
        get variable from file specifying the formatting
     """
     ind = fstring % (case_start,Varname,case_end)
-    print('getfarDSM opening',ind)
+    print('getvarDSM opening',ind)
     DS = xr.open_mfdataset(ind)
     DS.coords['lon'] = (DS.coords['lon'] + 180) % 360 - 180
     DS = DS.sortby(DS.lon)
@@ -365,11 +366,16 @@ def derfld(VN, fstring1, case_start1, case_end1):
     else:
         1./0.
         
+# lines to support debugging the above functions
+
+# sample multilevel field on hybrid levels
+#fig, axes = setfig3b1x1()
+
 #PRECT = derfld('PRECT',fstring1, case_start1, case_end1)
 #PRECTA = PRECT.weighted(weights).mean()
 #print('PRECTA',PRECTA.values)
 #xr_llhplot(PRECT, ax=axes)#,clevs=clevs,title=pref1+sV1A)
-if True:
+if False:
     ICNUMLIQ1 = derfld('ICNUMLIQPBLT',fstring1, case_start1, case_end1)
     xr_llhplot(ICNUMLIQ1, ax=axes)#,clevs=clevs,title=pref1+sV1A)
     pltllbox([-150.,-110.],[0.,30.])
@@ -377,13 +383,14 @@ if True:
     pltllbox([-25.,15.],[-30.,0.])
     plt.show()
     
-ICNUMLIQ2 = derfld('ICNUMLIQPBLT',fstring2, case_start2, case_end2)
-xr_llhplot(ICNUMLIQ2, ax=axes)#,clevs=clevs,title=pref1+sV1A)
-#plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
-pltllbox([-150.,-110.],[0.,30.])
-pltllbox([-110.,-70.],[-30.,0.])
-pltllbox([-25.,15.],[-30.,0.])
-plt.show()
+if False:
+    ICNUMLIQ2 = derfld('ICNUMLIQPBLT',fstring2, case_start2, case_end2)
+    xr_llhplot(ICNUMLIQ2, ax=axes)#,clevs=clevs,title=pref1+sV1A)
+    #plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
+    pltllbox([-150.,-110.],[0.,30.])
+    pltllbox([-110.,-70.],[-30.,0.])
+    pltllbox([-25.,15.],[-30.,0.])
+    plt.show()
 
 #PRECT = derfld('PRECT',fstring1, case_start1, case_end1)
 

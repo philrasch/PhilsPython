@@ -6,11 +6,11 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.5
+      jupytext_version: 1.15.2
   kernelspec:
-    display_name: Python [conda env:pjrpy3] *
+    display_name: pjrpy3
     language: python
-    name: conda-env-pjrpy3-py
+    name: pjrpy3
 ---
 
 **compare two simulations on the ne30 native grid

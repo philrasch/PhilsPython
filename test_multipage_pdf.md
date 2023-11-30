@@ -5,11 +5,11 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.15.2
+      jupytext_version: 1.14.0
   kernelspec:
-    display_name: Python [conda env:pjrpy3] *
+    display_name: pjrpy3
     language: python
-    name: conda-env-pjrpy3-py
+    name: pjrpy3
 ---
 
 ```python
