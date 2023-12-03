@@ -47,6 +47,15 @@ def pltllbox(xri, yri):
     regcx = [xri[0],xri[1],xri[1],xri[0],xri[0]]
     regcy = [yri[0],yri[0],yri[1],yri[1],yri[0]]
     plt.plot(regcx,regcy,color='red',transform=ccrs.PlateCarree())
+    
+def pltllbox2(xri, yri,ax=None):
+    if ax is None:
+        ax = plt.gca()
+    if xri[1] < xri[0]:
+        xri[1] += 360.
+    regcx = [xri[0],xri[1],xri[1],xri[0],xri[0]]
+    regcy = [yri[0],yri[0],yri[1],yri[1],yri[0]]
+    ax.plot(regcx,regcy,color='red',transform=ccrs.PlateCarree())
 ```
 
 ```python
@@ -182,37 +191,52 @@ def xr_llhplot2 (xrVar, cbar='default', plotproj=None, ax=None, cax=None,
         #print('grab current axis')
         #ax = plt.gca()
         ax = plt.axes(projection=plotproj)
-
-    pl = ax.contourf(xv, yv, data_regridded, levels=clevs, # vmin=zmin, vmax=zmax,
-                     norm=norm, cmap=cmap,
-                     extend=extend, transform=ccrs.PlateCarree())
-    if not title is None:
-        ax.set_title(title)
         
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
                       linewidth=2, color='gray', alpha=0.5)
+    pl = ax.contourf(xv, yv, data_regridded, levels=clevs, # vmin=zmin, vmax=zmax,
+                     norm=norm, cmap=cmap,
+                     extend=extend, transform=ccrs.PlateCarree())
+    
     gl.left_labels=ylabels
     gl.right_labels=ylabels
     ax.coastlines(linewidth=1,color='blue')
+ 
+    ## Find the location of the main plot axes
+    ## has to be done after some plotting is done in projection space
+    posn = ax.get_position()
+    print('posn',posn)
+    
+    # print some registration marks to help in lining up figures
+    ax2 = fig.add_axes([0,0,0.1,0.1])
+    ax2.set_position([posn.x0-0.005, posn.y0-0.005, posn.width+0.01, posn.height+0.01])
+    ax2.patch.set_alpha(0.0)
+    ax2.scatter([0,0,1,1], [0,1,0,1], c="r", s=100)
+    ax2.set_axis_off()
+    ax2.set_xlim([0,1])
+    ax2.set_ylim([0,1])
+
+    if not title is None:
+        ax.set_title(title)
+        
+    # Add colorbar to plot
+    print('cbartitle is ',cbartitle)
+    if cbartitle is None:
+        cbartitle = xrVar.long_name
         
     if cbar == 'default':
-        divider = make_axes_locatable(ax)
-        if cax is None:
+        if cax is not None:
             cax = ax
-            #cax = fig.add_axes([0,0,0.1,0.1])
-            #cax = divider.append_axes("bottom", size="5%", pad=0.05)
-            #ll, bb, ww, hh = ax.get_position().bounds
-            #cax = fig.add_axes([ll,bb,ww,hh])
-        # Add colorbar to plot
-        print('cbartitle is ',cbartitle)
-        if cbartitle is None:
-            cbartitle = xrVar.long_name 
-        #posn = ax.get_position()
-        #cax.set_position([posn.x0, posn.y0-0.09, posn.width, 10.05])
+        else:
+            # create an colorbar axis
+            cax = fig.add_axes([0,0,0.1,0.1])
+            ## Adjust the positioning and orientation of the colorbar
+            cax.set_position([posn.x0, posn.y0-0.06, posn.width, 0.03])
+    
         cb = plt.colorbar(
-            pl, orientation='horizontal',ticks=clevs,ax=cax,
-            label='%s (%s)'%(cbartitle, xrVar.units), pad=0.01
-        )
+             pl, orientation='horizontal',ticks=clevs,cax=cax,
+             label='%s (%s)'%(cbartitle, xrVar.units)
+             )
         cb.ax.tick_params(labelsize=8)
         
     return
@@ -265,9 +289,6 @@ for Varname in Varlist:
     Var1 = xr_getvar(Varname,DS1)
     V1 = Var1.mean(dim='time',keep_attrs=True)
     Var2 = xr_getvar(Varname,DS2)
-    #print('yyy',Var2)
-    #print('yy2',Var2.lat)
-    #print('yy3',Var2.time)
     V2 = Var2.mean(dim='time',keep_attrs=True)
 
     DV = V1-V2
@@ -335,7 +356,7 @@ for Varname in Varlist:
             xr_llhplot(V1, ax=axes[0],clevs=clevs,title=pref1+sV1A)
             xr_llhplot(V2, ax=axes[1],clevs=clevs,ylabels=False,title=pref2+sV2A)
             xr_llhplot(DV, ax=axes[2],clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA)
-            #plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
+            plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300,transparent=True)
             plt.show()
             
         # good setup for 3 rows of 1 columns
@@ -360,18 +381,17 @@ for Varname in Varlist:
                 plt.show()
 
             fig, axes = setfig3b1x1()
-            xr_llhplot2(DV, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA, ylabels=False,cbar=None)
-            pltllbox([-150.,-110.],[0.,30.])
-            pltllbox([-110.,-70.],[-30.,0.])
-            pltllbox([-25.,15.],[-30.,0.])
+            xr_llhplot2(DV, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA, ylabels=False)#,cbar=None)
+            pltllbox2([-150.,-110.],[0.,30.],ax=axes)
+            pltllbox2([-110.,-70.],[-30.,0.],ax=axes)
+            pltllbox2([-25.,15.],[-30.,0.],ax=axes)
             #plt.rcParams['savefig.facecolor'] = "0.8"
             #axes.patch.set_facecolor('xkcd:mint green')
-            axes.patch.set_facecolor('xkcd:red')
-            fig.patch.set_facecolor('xkcd:mint green') # This changes the grey to white
-            plt.tight_layout()
-            plt.savefig(pref1+'_'+Varname+'-D.pdf',format='pdf',dpi=300)#,facecolor='xkcd:mint green')
+            #axes.patch.set_facecolor('xkcd:red')
+            #fig.patch.set_facecolor('xkcd:mint green') # This changes the grey to white
+            #plt.tight_layout()
+            plt.savefig(pref1+'_'+Varname+'-D.pdf',format='pdf',dpi=300,transparent=True)#,facecolor='xkcd:mint green')
             plt.show()
-
 
         
     print('field processing complete')
@@ -380,7 +400,7 @@ for Varname in Varlist:
 ```
 
 ```python
-casename0 = "Fixed_SST" # reference run
+# casename0 = "Fixed_SST" # reference run
 casename1 = "MCB_R1R2R3_CN600cm_NEP"
 casename2 = "MCB_R1R2R3_CN600cm_SEP"
 casename3 = "MCB_R1R2R3_CN600cm_SEA"
@@ -409,17 +429,19 @@ ind0 = bld_fname3(casename0, Varname)
 ind1 = bld_fname(casename1, Varname)
 ind2 = bld_fname(casename2, Varname)
 ind3 = bld_fname(casename3, Varname)
-DS0 = xr.open_mfdataset(ind0)
-DS1 = xr.open_mfdataset(ind1)
-DS2 = xr.open_mfdataset(ind2)
-DS3 = xr.open_mfdataset(ind3)
+DS0 = center_time(xr.open_mfdataset(ind0))
+DS1 = center_time(xr.open_mfdataset(ind1))
+DS2 = center_time(xr.open_mfdataset(ind2))
+DS3 = center_time(xr.open_mfdataset(ind3))
 
 DSR, DS0 = reconcile_xr_coords(DSR, DS0)
 DSR, DS1 = reconcile_xr_coords(DSR, DS1)
 DS0, DS2 = reconcile_xr_coords(DS0, DS2)
 DS0, DS3 = reconcile_xr_coords(DS0, DS3)
 
-print('example string used for file open\n',ind1)
+# grab only the first 10 years of the control
+#DS0 = DS0.isel(time=slice(0,120))
+
 C0 = DS0[Varname].mean(dim="time")
 C1 = DS1[Varname].mean(dim="time")
 C2 = DS2[Varname].mean(dim="time")
