@@ -41,7 +41,7 @@ def setfig3b1x1 ():
     fig.set_dpi(300.0)
     return fig, axes;
 
-def pltllbox(xri, yri):
+def pltllboxx(xri, yri):
     if xri[1] < xri[0]:
         xri[1] += 360.
     regcx = [xri[0],xri[1],xri[1],xri[0],xri[0]]
@@ -83,7 +83,7 @@ if True: #CESM CDNC 600 -1.8 W/m2
     case_start2 = "/home/jupyter-haruki/work/CESM_MCB/Fixed_SST/Fixed_SST.cam.h0."
     case_start2 = "/e3sm_prod/phil/climo/cesm/Fixed_SST/fv192x288/Fixed_SST.cam.h0.1-20."
     case_end2 = ".nc"
-    pref2='CESMcontrol'
+    pref2='Control'
     fstring2 ='%s%s%s' 
 
 if False: #E3SM CDNC600 very weak forcing
@@ -205,7 +205,6 @@ def xr_llhplot2 (xrVar, cbar='default', plotproj=None, ax=None, cax=None,
     ## Find the location of the main plot axes
     ## has to be done after some plotting is done in projection space
     posn = ax.get_position()
-    print('posn',posn)
     
     # print some registration marks to help in lining up figures
     ax2 = fig.add_axes([0,0,0.1,0.1])
@@ -220,7 +219,6 @@ def xr_llhplot2 (xrVar, cbar='default', plotproj=None, ax=None, cax=None,
         ax.set_title(title)
         
     # Add colorbar to plot
-    print('cbartitle is ',cbartitle)
     if cbartitle is None:
         cbartitle = xrVar.long_name
         
@@ -231,7 +229,7 @@ def xr_llhplot2 (xrVar, cbar='default', plotproj=None, ax=None, cax=None,
             # create an colorbar axis
             cax = fig.add_axes([0,0,0.1,0.1])
             ## Adjust the positioning and orientation of the colorbar
-            cax.set_position([posn.x0, posn.y0-0.06, posn.width, 0.03])
+            cax.set_position([posn.x0, posn.y0-0.06, posn.width, 0.04])
     
         cb = plt.colorbar(
              pl, orientation='horizontal',ticks=clevs,cax=cax,
@@ -400,15 +398,17 @@ for Varname in Varlist:
 ```
 
 ```python
-# casename0 = "Fixed_SST" # reference run
+casename0 = "Fixed_SST" # reference run
+#casename0 = "MCB_R1R2R3_CN600cm"
 casename1 = "MCB_R1R2R3_CN600cm_NEP"
 casename2 = "MCB_R1R2R3_CN600cm_SEP"
 casename3 = "MCB_R1R2R3_CN600cm_SEA"
 
 case_end = ".nc"
-prefix='CESM_CN600'
+pref1='SYN CESM_CN600'
 fstring ='%s%s%s'
 
+pref2 = 'Control'
 Varname='FSNT'
 Varname='SWCF'
 
@@ -426,6 +426,7 @@ def bld_fname3(casename, Varname):
     return fname
 
 ind0 = bld_fname3(casename0, Varname)
+print('ind0',ind0)
 ind1 = bld_fname(casename1, Varname)
 ind2 = bld_fname(casename2, Varname)
 ind3 = bld_fname(casename3, Varname)
@@ -464,38 +465,43 @@ C1AD = C1A - C0A
 #print('C1A,V2A',C1A.values,V2A.values)
 #print(C1AD)
 sC1AD = ' (%5.2f)' % C1AD
-fig, axes = setfig3b1x1()
-xr_llhplot(C1-C0, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sC1AD)
-pltllbox([-150.,-110.],[0.,30.])
-pltllbox([-110.,-70.],[-30.,0.])
-pltllbox([-25.,15.],[-30.,0.])
+if False:
+    fig, axes = setfig3b1x1()
+    xr_llhplot2(C1-C0, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sC1AD)
+    pltllbox2([-150.,-110.],[0.,30.],ax=axes)
+    pltllbox2([-110.,-70.],[-30.,0.],ax=axes)
+    pltllbox2([-25.,15.],[-30.,0.],ax=axes)
 
 C2A = C2.weighted(weights).mean()
 C2AD = C2A - C0A
 #print(C2AD)
 sC2AD = ' (%5.2f)' % C2AD
-fig, axes = setfig3b1x1()
-xr_llhplot(C2-C0, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sC2AD)
-pltllbox([-150.,-110.],[0.,30.])
-pltllbox([-110.,-70.],[-30.,0.])
-pltllbox([-25.,15.],[-30.,0.])
-         
+if False:
+    fig, axes = setfig3b1x1()
+    xr_llhplot2(C2-C0, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sC2AD)
+    pltllbox2([-150.,-110.],[0.,30.],ax=axes)
+    pltllbox2([-110.,-70.],[-30.,0.],ax=axes)
+    pltllbox2([-25.,15.],[-30.,0.],ax=axes)
+
 C3A = C3.weighted(weights).mean()
 C3AD = C3A - C0A
 #print(C3AD)
 sC3AD = ' (%5.2f)' % C3AD
-fig, axes = setfig3b1x1()
-xr_llhplot(C3-C0, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sC3AD)
-pltllbox([-150.,-110.],[0.,30.])
-pltllbox([-110.,-70.],[-30.,0.])
-pltllbox([-25.,15.],[-30.,0.])
+if False:
+    fig, axes = setfig3b1x1()
+    xr_llhplot2(C3-C0, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sC3AD)
+    pltllbox2([-150.,-110.],[0.,30.],ax=axes)
+    pltllbox2([-110.,-70.],[-30.,0.],ax=axes)
+    pltllbox2([-25.,15.],[-30.,0.],ax=axes)
 
 sCSAD = ' (%5.2f)' % CSAD
 fig, axes = setfig3b1x1()
-xr_llhplot(CumS-C0, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sCSAD)
-pltllbox([-150.,-110.],[0.,30.])
-pltllbox([-110.,-70.],[-30.,0.])
-pltllbox([-25.,15.],[-30.,0.])
+xr_llhplot2(CumS-C0, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sCSAD)
+pltllbox2([-150.,-110.],[0.,30.],ax=axes)
+pltllbox2([-110.,-70.],[-30.,0.],ax=axes)
+pltllbox2([-25.,15.],[-30.,0.],ax=axes)
+plt.savefig(pref1+'_'+Varname+'-D.pdf',format='pdf',dpi=300,transparent=True)#,facecolor='xkcd:mint green')
+
 ```
 
 ```python
