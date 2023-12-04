@@ -34,19 +34,19 @@ def setfig3b1x1 ():
     fig, axes = plt.subplots(ncols=1,
                              gridspec_kw={'width_ratios': [1]},
                              subplot_kw={'projection': plotproj},
-                             figsize=(6,3),
+                             figsize=(6,4.1),
                             )
     fig.set_dpi(300.0)
     return fig, axes;
 
-
-def pltllbox(xri, yri):
+def pltllbox(xri, yri,ax=None):
+    if ax is None:
+        ax = plt.gca()
     if xri[1] < xri[0]:
         xri[1] += 360.
     regcx = [xri[0],xri[1],xri[1],xri[0],xri[0]]
     regcy = [yri[0],yri[0],yri[1],yri[1],yri[0]]
-    plt.plot(regcx,regcy,color='red',transform=ccrs.PlateCarree())
-    
+    ax.plot(regcx,regcy,color='red',transform=ccrs.PlateCarree())
 ```
 
 ```python
@@ -223,6 +223,107 @@ Vdict = {'net_ToA_LW_W_m2':'toa_outgoing_longwave_flux'
 ```
 
 ```python
+def xr_llhplot2 (xrVar, cbar='default', plotproj=None, ax=None, cax=None, fig=None,
+                 ylabels=False, clevs=None, cmap=None, title=None, cbartitle=None):
+    """xr_llhplot xarray lat lon horizontal plot
+    """
+    #print(' entering xr_llhplot', xrVar)
+    
+    lon=xrVar['lon'].values
+    lat=xrVar['lat'].values
+    xv,yv=np.meshgrid(lon,lat)
+    data_regridded = xrVar.values
+    #print('aaa',data_regridded.shape, xv.shape, yv.shape)
+    df = data_regridded.flatten()
+    dsub = df[np.isfinite(df)] # ignore NaN
+    zmax = dsub.max()
+    zmin = dsub.min()
+    #print('masked interpolated range',zmin,zmax)
+    dataproj=ccrs.PlateCarree()    # data is always assumed to be lat/lon
+    if ylabels is None: ylabels = True
+    if clevs is None:
+        clevs = findNiceContours(np.array([zmin,zmax]),nlevs=10)
+    #print('clevs',clevs)
+    if cmap is None:
+        #print('aaa, grabbing cmap default')
+        #cmap = mpl.cm.get_cmap()
+        cmap = plt.get_cmap()
+        #print('bbb',cmap.N)
+    #print('cmap',cmap)
+    extend = 'both'
+    norm = mpl.colors.BoundaryNorm(clevs,cmap.N,extend=extend)
+    #print('norm',norm(clevs))
+    clat = (lat.min()+lat.max())/2.
+    clon = (lon.min()+lon.max())/2.
+    if plotproj is None:
+        plotproj = ccrs.PlateCarree()
+        plotproj = ccrs.Mollweide()
+ 
+    # if no ax argument, could get current axis, or create it
+    if ax is None:
+        #print('grab current axis')
+        #ax = plt.gca()
+        ax = plt.axes(projection=plotproj)
+        
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
+                      linewidth=2, color='gray', alpha=0.5)
+    pl = ax.contourf(xv, yv, data_regridded, levels=clevs, # vmin=zmin, vmax=zmax,
+                     norm=norm, cmap=cmap,
+                     extend=extend, transform=ccrs.PlateCarree())
+    
+    gl.left_labels=ylabels
+    gl.right_labels=ylabels
+    ax.coastlines(linewidth=1,color='blue')
+ 
+    ## Find the location of the main plot axes
+    ## has to be done after some plotting is done in projection space
+    posn = ax.get_position()
+    
+    # print some registration marks to help in lining up figures
+    ax2 = fig.add_axes([0,0,0.1,0.1])
+    ax2.set_position([posn.x0-0.005, posn.y0-0.005, posn.width+0.01, posn.height+0.01])
+    ax2.patch.set_alpha(0.0)
+    ax2.scatter([0,0,1,1], [0,1,0,1], c="r", s=100)
+    ax2.set_axis_off()
+    ax2.set_xlim([0,1])
+    ax2.set_ylim([0,1])
+
+    if not title is None:
+        #ax.set_title(title)
+        ax2.text(0.01,0.9,title)
+    
+    # Add colorbar to plot
+    if cbartitle is None:
+        cbartitle = xrVar.long_name
+        
+    if cbar == 'default':
+        if cax is not None:
+            cax = ax
+        else:
+            # create an colorbar axis
+            cax = fig.add_axes([0,0,0.1,0.1])
+            ## Adjust the positioning and orientation of the colorbar
+            cax.set_position([posn.x0, posn.y0-0.07, posn.width, 0.05])
+
+        cb = plt.colorbar(
+             pl, orientation='horizontal',ticks=clevs,cax=cax,
+             label='%s (%s)'%(cbartitle, xrVar.units),
+             )
+        cb.ax.tick_params(labelsize=11)
+        #cb.ax.set_yticklabels(['{:.0f}'.format(x) for x in clevs])#, fontsize=16, weight='bold')
+        if len(clevs) > 15:
+            clevs2 = findNiceContours(clevs,nlevs = 10, rmClev=0.,sym=True)
+            cb.set_ticks(clevs2)
+            cb.set_ticklabels(clevs2)
+            #cb.ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+            cb.ax.set_xticklabels(["{:.0f}".format(i) for i in clevs2]) # set ticks of your format
+
+
+        
+    return
+```
+
+```python
 def pltfld(DV, titled, fname=None):
     
     cbartitle = DV.long_name
@@ -250,13 +351,13 @@ def pltfld(DV, titled, fname=None):
         # good setup for 3 rows of 1 columns
         if plconf == '3-1x1':
             fig, axes = setfig3b1x1()
-            xr_llhplot(DV, ax=axes,clevs=dlevs,cmap=dmap,title=titled, cbartitle=cbartitle)
-            pltllbox([-150.,-110.],[0.,30.])
-            pltllbox([-110.,-70.],[-30.,0.])
-            pltllbox([-25.,15.],[-30.,0.])
+            xr_llhplot2(DV, fig=fig, ax=axes,clevs=dlevs,cmap=dmap,title=titled, cbartitle=cbartitle)
+            pltllbox([-150.,-110.],[0.,30.],ax=axes)
+            pltllbox([-110.,-70.],[-30.,0.],ax=axes)
+            pltllbox([-25.,15.],[-30.,0.],ax=axes)
             if fname is not None:
                 print('fname',fname)
-                plt.savefig(fname,dpi=300)
+                plt.savefig(fname,dpi=300,transparent=True)
             plt.show()
 
 
@@ -315,6 +416,7 @@ print('example string used for file 1 open',ind1)
 ind2 = make_ind2(REG_ID,Varname,filetype)
 
 difftitle='Syn R1+R2+R3(each@25Tgpyr)-Ctl'
+difftitle=''
 print('example string used for file 2 open',ind2)
 
 
@@ -333,7 +435,7 @@ Varlist = np.array(['net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2'])
 #Varlist = np.array(['net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2'])
 #Varlist = np.array(['AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
 #Varlist = np.array(['T_surface_K'])
-Varlist = np.array(['LWP_kg_m2'])
+Varlist = np.array(['LWP_kg_m2','net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2','cloud_fraction'])
 
 FSNT1 = None
 FSNT2 = None
@@ -417,10 +519,12 @@ for Varname in Varlist:
     #V2S = V2S/nreg
 
     DVA = DVS.weighted(weights).mean()
-    sDVA = ' (%5.2f)' % DVA
+    sDVA = ' ({:5.2f}{:s})'.format(DVA.values, DVA.units)
+    print('yyy', sDVA)
     print('summed area Delta %5.2f' % (DVA.values))
     fname = pref_fn+'_'+Varname+'_'+DV.name+'-D.pdf'
     pltfld(DVS, difftitle+sDVA,fname)
+
     if VN == 'FSNT':
         print('xxx')
         FSNT1=V1S
@@ -442,9 +546,15 @@ else:
     SWCRE2 = SWCRE2.rename('SWCRE')
     DSWCRE = SWCRE1-SWCRE2
     DSWCREA = DSWCRE.weighted(weights).mean()
-    sDSWCREA = ' (%5.2f)' % DSWCREA
+    #sDSWCREA = ' (%5.2f %s)' % DSWCREA, DSWCREA.units
+    sDSWCREA = ' ({:5.2f}{:s})'.format(DSWCREA.values, DSWCREA.units)
     print('xxx',sDSWCREA)
     fname = pref_fn+'_'+Varname+'_'+'SWCRE'+'-D.pdf'
     pltfld(DSWCRE, difftitle+sDSWCREA,fname)
 
+```
+
+```python
+sDSWCREA = ' ({:5.2f}{:s})'.format(DSWCREA.values, DSWCREA.units)
+print('xxx',sDSWCREA)
 ```
