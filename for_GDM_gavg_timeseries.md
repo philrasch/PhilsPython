@@ -26,10 +26,7 @@ print(sys.version)
 ```
 
 ```python
-pref1='E3SM_test'
-pref2='E3SMcontrol'
-
-
+fnprefix='GAVG_tsers_E3SM_and_CESM'
 ```
 
 ```python
@@ -148,12 +145,28 @@ dir5 = "/e3sm_prod/phil/timeseries/cesm2-mcb-reshaped/CESM2_SSP245/ens001"
 case5 = "b.e21.BSSP245smbb.f09_g17.001"
 ext5 = ".cam.h0"
 ext5f = ".201501-206412.nc"
-tit5 = "CESM Control"
+tit5 = "CESM Control(e1)"
 string5 = "{dir:s}/{case:s}{ext:s}.{var:s}"+ext5f
-    
+
+dir6 = "/e3sm_prod/phil/timeseries/cesm2-mcb-reshaped/CESM2_SSP245/ens002"
+case6 = "b.e21.BSSP245smbb.f09_g17.002"
+ext6 = ".cam.h0"
+ext6f = ".201501-206412.nc"
+tit6 = "CESM Control(e2)"
+string6 = "{dir:s}/{case:s}{ext:s}.{var:s}"+ext6f
+
+dir7 = "/e3sm_prod/phil/timeseries/cesm2-mcb-reshaped/CESM2_SSP245/ens003"
+case7 = "b.e21.BSSP245smbb.f09_g17.003"
+ext7 = ".cam.h0"
+ext7f = ".201501-206412.nc"
+tit7 = "CESM Control(e3)"
+string7 = "{dir:s}/{case:s}{ext:s}.{var:s}"+ext7f
+
 for Varname in Varlist:
     print()
     print('-------------------------------'+Varname)
+    
+
     V1AY = make_GA_tser(Varname, string1, dir1, case1, ext1)
     #time = V1AY.coords['time']
     V1AY.coords['year'] = V1AY.coords['year'] - V1AY.coords['year'][0]
@@ -178,6 +191,12 @@ for Varname in Varlist:
 
     V5AY = make_GA_tser(Varname, string5, dir5, case5, ext5)
     V5AY.coords['year'] = V5AY.coords['year'] - V5AY.coords['year'][0]
+    
+    V6AY = make_GA_tser(Varname, string6, dir6, case6, ext6)
+    V6AY.coords['year'] = V6AY.coords['year'] - V6AY.coords['year'][0]
+    
+    V7AY = make_GA_tser(Varname, string7, dir7, case7, ext7)
+    V7AY.coords['year'] = V7AY.coords['year'] - V7AY.coords['year'][0]
     #print('time2',V5AY.coords['year'].values)
     #V2AY.plot()
     
@@ -188,23 +207,45 @@ for Varname in Varlist:
                             )
     fig.set_dpi(300.0)
     
+    # two color tables (one for cesm, one for e3sm. Stay away from the smallest indices for icolors as it will be whitish)
+    ecolors = cm.viridis(np.linspace(0, 1, 8))
+    ccolors = cm.inferno_r(np.linspace(0, 1, 8))
+    
+    # pert and control linestyes
+    pstyle = 'dotted'
+    cstyle = 'solid'
+    
     V1AY = V1AY - V1AY[0]
     V2AY = V2AY - V2AY[0]
     V3AY = V3AY - V3AY[0]
     V4AY = V4AY - V4AY[0]
     V5AY = V5AY - V5AY[0]
+    V6AY = V6AY - V6AY[0]
+    V7AY = V7AY - V7AY[0]
+
 
     #axes.text(0.5,1.01,"ax title")
-    V1AY.plot.line(ax=axes,label=tit1)
-    V2AY.plot.line(ax=axes,label=tit2)
-    V3AY.plot.line(ax=axes,label=tit3)
-    V4AY.plot.line(ax=axes,label=tit4)
-    V5AY.plot.line(ax=axes,label=tit5)
+    V1AY.plot.line(ax=axes,label=tit1,color=ecolors[1,:],linestyle=pstyle)
+    V2AY.plot.line(ax=axes,label=tit2,color=ecolors[2,:],linestyle=cstyle)
+    V3AY.plot.line(ax=axes,label=tit3,color=ecolors[3,:],linestyle=pstyle)
+    V4AY.plot.line(ax=axes,label=tit4,color=ccolors[2,:],linestyle=pstyle)
+    V5AY.plot.line(ax=axes,label=tit5,color=ccolors[3,:],linestyle=cstyle)
+    V6AY.plot.line(ax=axes,label=tit6,color=ccolors[4,:],linestyle=cstyle)
+    V7AY.plot.line(ax=axes,label=tit7,color=ccolors[5,:],linestyle=cstyle)
 
-    axes.legend()
-    axes.set_xlabel('Year from 2020')
-    axes.set_ylabel('Change from 2020 Values')
-    #plt.savefig(pref1+'_'+Varname+'.pdf',format='pdf',dpi=300)
+    Vmin = np.minimum(np.minimum(V5AY,V6AY),V7AY)
+    Vmax = np.maximum(np.maximum(V5AY,V6AY),V7AY)
+    axes.fill_between(Vmin.year.values, Vmin.values, Vmax.values, color=ccolors[3,:], alpha=0.2)
+
+    if Varname == 'TS':
+        axlabel = "T$_S$"
+    else:
+        axlable = V1A.long_name
+        
+    axes.legend(fontsize=8, framealpha=0.)
+    axes.set_xlabel('Year beyond 2020')
+    axes.set_ylabel(axlabel+' Change from 2020 IC ('+V1AY.units+')')
+    plt.savefig(fnprefix+'_'+Varname+'.pdf',format='pdf',dpi=300)
     plt.show()
     
     print('field processing complete')
