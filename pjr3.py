@@ -995,7 +995,7 @@ def _normalize_lat_lon(ds: xr.Dataset) -> xr.Dataset:
     return ds
 # ENDOF CODE FROM ESA CCI
 
-def xr_getvar(Varname, DS, regtag=None):
+def xr_getvar(Varname, DS, regtag=None,long_name=None):
     """get variable Varname from xarray dataset DS
        some variables are derived from others
        some are modified to more traditional units
@@ -1260,6 +1260,8 @@ def xr_getvar(Varname, DS, regtag=None):
                 Var.attrs['long_name'] = Var.attrs['standard_name']
             else:
                 Var.attrs['long_name'] = Varname
+        if not long_name is  None:
+            Var.attrs["long_name"] = long_name
         return Var
 
 def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None):
@@ -1675,36 +1677,40 @@ def tavg_mon_wt(xr_var):
     # Return the weighted average
     return wavg
 
-def reconcile_xr_coords(V1G, V2G, rtol=1.e-8):
-    '''                                                                                                                                                                                        
-    usage:                                                                                                                                                                                     
-        V1, V2 = reconcile_xr_coords(V1, V2, rtol=)                                                                                                                                            
-                                                                                                                                                                                               
-    check whether the Coordinates in two xarray objects (DataSet or DataArray) are close.                                                                                                                              
-        if they are identical do nothing                                                                                                                                                       
-        if they differ below rtol, then sent V2 coordinat to the V1 values                                                                                                                     
-        if they exceed rtol then issue an error message and stop                                                                                                                               
-                                                                                                                                                                                               
-    The code is still pretty rough. It could be improved by                                                                                                                                    
-        allowing an exclude list, other than the time coord which is already avoided                                                                                                                                                             
-        checking whether coords are the same in V1 and V2                                                                                                                                      
-                                                                                                                                                                                               
-    '''
+def reconcile_xr_coords(V1G, V2G, rtol=1.e-8,verbose=False):
+    """
+    usage: V1, V2 = reconcile_xr_coords(V1, V2, rtol=) 
+    check whether the Coordinates in two xarray objects (DataSet or DataArray) are close. 
+    if they are identical do nothing 
+    if they differ below rtol, then set V2 coordinate to the V1 values 
+    if they exceed rtol then issue an error message and stop 
+    
+    The code is still pretty rough. 
+    It could be improved by 
+    allowing an exclude list, other than the time coord which is already avoided 
+    checking whether coords are the same in V1 and V2 
+
+    """
     #make copies, in case we dont want to overwrite original coords
     V1 = V1G.copy()
     V2 = V2G.copy()
     coords = V1.coords
+    coord2 = V2.coords
     for c in coords:
-        #print(c)                                                                                                                                                                              
+        if verbose:
+            print('comparing', c) 
         if c == 'time':
-            #print('skip')                                                                                                                                                                     
+            if verbose:
+                print('skipping',c) 
+            continue
+        if c not in coord2:
+            print(c,' absent in second object') 
             continue
         V1cv = V1[c].values
         V2cv = V2[c].values
         relerr = 2.*np.abs(V1cv-V2cv)/(np.abs(V1cv+V2cv)+1.e-16)
         relerrm = np.max(relerr)
-        #print('relerrm',relerrm)                                                                                                                                                              
-        #xr.testing.assert_allclose(V1[c],V2[c])                                                                                                                                               
+        #print('relerrm',relerrm) #xr.testing.assert_allclose(V1[c],V2[c])
         if (relerrm == 0.):
             continue
         if (relerrm < rtol):

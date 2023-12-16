@@ -34,17 +34,162 @@ def setfig3b1x1 ():
     fig, axes = plt.subplots(ncols=1,
                              gridspec_kw={'width_ratios': [1]},
                              subplot_kw={'projection': plotproj},
-                             figsize=(6,3),
+                             figsize=(6,4.1),
                             )
     fig.set_dpi(300.0)
     return fig, axes;
 
-def pltllbox(xri, yri):
+def pltllbox(xri, yri,ax=None):
+    if ax is None:
+        ax = plt.gca()
     if xri[1] < xri[0]:
         xri[1] += 360.
     regcx = [xri[0],xri[1],xri[1],xri[0],xri[0]]
     regcy = [yri[0],yri[0],yri[1],yri[1],yri[0]]
-    plt.plot(regcx,regcy,color='red',transform=ccrs.PlateCarree())
+    ax.plot(regcx,regcy,color='red',transform=ccrs.PlateCarree())
+```
+
+```python
+def xr_llhplot2 (xrVar, cbar='default', plotproj=None, ax=None, cax=None, fig=None,
+                 ylabels=False, clevs=None, cmap=None, title=None, cbartitle=None):
+    """xr_llhplot xarray lat lon horizontal plot
+    """
+    #print(' entering xr_llhplot', xrVar)
+    
+    lon=xrVar['lon'].values
+    lat=xrVar['lat'].values
+    xv,yv=np.meshgrid(lon,lat)
+    data_regridded = xrVar.values
+    #print('aaa',data_regridded.shape, xv.shape, yv.shape)
+    df = data_regridded.flatten()
+    dsub = df[np.isfinite(df)] # ignore NaN
+    zmax = dsub.max()
+    zmin = dsub.min()
+    #print('masked interpolated range',zmin,zmax)
+    dataproj=ccrs.PlateCarree()    # data is always assumed to be lat/lon
+    if ylabels is None: ylabels = True
+    if clevs is None:
+        clevs = findNiceContours(np.array([zmin,zmax]),nlevs=10)
+    #print('clevs',clevs)
+    if cmap is None:
+        #print('aaa, grabbing cmap default')
+        #cmap = mpl.cm.get_cmap()
+        cmap = plt.get_cmap()
+        #print('bbb',cmap.N)
+    #print('cmap',cmap)
+    extend = 'both'
+    norm = mpl.colors.BoundaryNorm(clevs,cmap.N,extend=extend)
+    #print('norm',norm(clevs))
+    clat = (lat.min()+lat.max())/2.
+    clon = (lon.min()+lon.max())/2.
+    if plotproj is None:
+        plotproj = ccrs.PlateCarree()
+        plotproj = ccrs.Mollweide()
+ 
+    # if no ax argument, could get current axis, or create it
+    if ax is None:
+        #print('grab current axis')
+        #ax = plt.gca()
+        ax = plt.axes(projection=plotproj)
+        
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
+                      linewidth=2, color='gray', alpha=0.5)
+    pl = ax.contourf(xv, yv, data_regridded, levels=clevs, # vmin=zmin, vmax=zmax,
+                     norm=norm, cmap=cmap,
+                     extend=extend, transform=ccrs.PlateCarree())
+    
+    gl.left_labels=ylabels
+    gl.right_labels=ylabels
+    ax.coastlines(linewidth=1,color='blue')
+ 
+    ## Find the location of the main plot axes
+    ## has to be done after some plotting is done in projection space
+    posn = ax.get_position()
+    
+    # print some registration marks to help in lining up figures
+    ax2 = fig.add_axes([0,0,0.1,0.1])
+    ax2.set_position([posn.x0-0.005, posn.y0-0.005, posn.width+0.01, posn.height+0.01])
+    ax2.patch.set_alpha(0.0)
+    ax2.scatter([0,0,1,1], [0,1,0,1], c="r", s=100)
+    ax2.set_axis_off()
+    ax2.set_xlim([0,1])
+    ax2.set_ylim([0,1])
+
+    if not title is None:
+        #ax.set_title(title)
+        ax2.text(0.01,0.9,title)
+    
+    # Add colorbar to plot
+    if cbartitle is None:
+        cbartitle = xrVar.long_name
+        
+    if cbar == 'default':
+        if cax is not None:
+            cax = ax
+        else:
+            # create an colorbar axis
+            cax = fig.add_axes([0,0,0.1,0.1])
+            ## Adjust the positioning and orientation of the colorbar
+            cax.set_position([posn.x0, posn.y0-0.07, posn.width, 0.05])
+
+        cb = plt.colorbar(
+             pl, orientation='horizontal',ticks=clevs,cax=cax,
+             label='%s (%s)'%(cbartitle, xrVar.units),
+             )
+        cb.ax.tick_params(labelsize=11)
+        #cb.ax.set_yticklabels(['{:.0f}'.format(x) for x in clevs])#, fontsize=16, weight='bold')
+        if len(clevs) > 15:
+            clevs2 = findNiceContours(clevs,nlevs = 10, rmClev=0.,sym=True)
+            cb.set_ticks(clevs2)
+            cb.set_ticklabels(clevs2)
+            #cb.ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+            cb.ax.set_xticklabels(["{:.0f}".format(i) for i in clevs2]) # set ticks of your format
+
+
+        
+    return
+```
+
+```python
+def pltfld(DV, titled, fname=None):
+    
+    cbartitle = DV.long_name
+    
+    if DV.min().values == DV.max().values:
+        print('constant field skipping plot ')
+    else:
+        dlev_rng = {'CDNUMC':np.array([0.,3.e11])/2.,'FSNT':np.array([-45.,45.]),
+                   'TGCLDLWP':np.array([-50.,50.]),'PRECL':np.array([-1.,1.]),
+                    #'TGCLDLWP':np.array([-80.,80.]),'PRECL':np.array([-1.,1.]),
+                    'PRECT':np.array([-5.,5.]),'SWCF':np.array([-45.,45.]),
+                    'CLDLOW':np.array([-10.,10.]),'XXX':np.array([-45.,45.]),
+                    'CLDTOT':np.array([-10.,10.]),'FSNTC':np.array([-20.,20.]),
+
+                   }
+        if DV.name in dlev_rng:
+            dlevs = findNiceContours(dlev_rng[DV.name],nlevs = 15,rmClev=0.,sym=True)
+        else:
+            dlevs = findNiceContours(np.array([DV.min().values,DV.max().values]),nlevs = 15, rmClev=0.,sym=True)
+        #dlevs = [-5.,-2.,-1.,-0.5,-0.2,-0.1,0.1,0.2,0.5,1.,2.,5.]
+        #print('xxx',dlevs)
+        dmap = diverge_map()
+
+        plconf = '3-1x1'
+        #plconf = '1x3'
+        # good setup for 1 row of 3 columns
+        # good setup for 3 rows of 1 columns
+        if plconf == '3-1x1':
+            fig, axes = setfig3b1x1()
+            xr_llhplot2(DV, fig=fig, ax=axes,clevs=dlevs,cmap=dmap,title=titled, cbartitle=cbartitle)
+            pltllbox([-150.,-110.],[0.,30.],ax=axes)
+            pltllbox([-110.,-70.],[-30.,0.],ax=axes)
+            pltllbox([-25.,15.],[-30.,0.],ax=axes)
+            if fname is not None:
+                print('fname',fname)
+                plt.savefig(fname,dpi=300,transparent=True)
+            plt.show()
+
+
 ```
 
 ```python
@@ -64,9 +209,10 @@ Varlist = np.array(['FSNT','FSNTC','FLNT','FLNTC'])
 Varlist = np.array(['SWCF','TGCLDLWP','CLDLOW'])
 #Varlist = np.array(['FSUTOA','FSNT','FSNTC'])
 Varlist = np.array(['PRECC'])
-Varlist = np.array(['CLDTOT','TGCLDLWP','FSNT','FSNTC','AODVIS'])
-Varlist = np.array(['CLDTOT'])
+Varlist = np.array(['SWCF','CLDTOT','TGCLDLWP','FSNT','FSNTC','AODVIS'])
 Varlist = np.array(['TGCLDLWP'])
+Varlist = np.array(['CLDTOT','TGCLDLWP','FSNT','FSNTC'])
+Varlist = np.array(['CLDTOT'])
 
 
 
@@ -209,7 +355,9 @@ for Varname in Varlist:
     V2A = V2.weighted(weights).mean()
     sV2A = ' (%5.2f)' % V2A
     DVA = V1A-V2A
-    sDVA = ' (%5.2f)' % DVA
+    #sDVA = ' (%5.2f)' % DVA
+    sDVA = ' ({:5.2f}{:s})'.format(DVA.values, DVA.units)
+
     print('area avgs '+pref1+' %5.2f' % (V1A.values),' '+pref2+' %5.2f' % (V2A.values),' Delta %5.2f' % (DVA.values))
 
     if V1.min().values == V1.max().values:
@@ -225,7 +373,7 @@ for Varname in Varlist:
                    'TGCLDLWP':np.array([-50.,50.]),'PRECL':np.array([-1.,1.]),
                     'PRECC':np.array([-1.,1.]),'SWCF':np.array([-45.,45.]),
                     'CLDLOW':np.array([-10.,10.]),'AODVIS':np.array([-.9,.9]),
-                    'CLDTOT':np.array([-10.,10.]),
+                    'CLDTOT':np.array([-10.,10.]),'FSNTC':np.array([-20.,20.])
                    }
         if Varname in clev_rng:
             clevs = findNiceContours(clev_rng[Varname],nlevs = 12)
@@ -238,6 +386,9 @@ for Varname in Varlist:
         #dlevs = [-5.,-2.,-1.,-0.5,-0.2,-0.1,0.1,0.2,0.5,1.,2.,5.]
         #print('xxx',dlevs)
         dmap = diverge_map()
+        
+        if Varname == 'CLDTOT':
+            DV.attrs['long_name'] = "Cloud Cover"
 
         plconf = '3-1x1'
         #plconf = '1x3'
@@ -277,19 +428,28 @@ for Varname in Varlist:
                 plt.savefig(pref2+'_'+Varname+'.pdf',format='pdf',dpi=300)
                 plt.show()
 
-            fig, axes = setfig3b1x1()
-            xr_llhplot(DV, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA)
-            pltllbox([-150.,-110.],[0.,30.])
-            pltllbox([-110.,-70.],[-30.,0.])
-            pltllbox([-25.,15.],[-30.,0.])
+            if False:
+                fig, axes = setfig3b1x1()
+                xr_llhplot(DV, ax=axes,clevs=dlevs,cmap=dmap,title=pref1+'-'+pref2+sDVA)
+                pltllbox([-150.,-110.],[0.,30.])
+                pltllbox([-110.,-70.],[-30.,0.])
+                pltllbox([-25.,15.],[-30.,0.])
+                plt.savefig(pref1+'_'+Varname+'-D.pdf',format='pdf',dpi=300)
+                plt.show()
 
-            plt.savefig(pref1+'_'+Varname+'-D.pdf',format='pdf',dpi=300)
-            plt.show()
-
+            pref_fn = pref1
+            difftitle = ''
+            fname = pref_fn+'_'+DV.name+'-D.pdf'
+            pltfld(DV, difftitle+sDVA,fname)
 
         
     print('field processing complete')
 
+```
+
+```python
+print('rest of script not needed')
+1./0.
 ```
 
 ```python
