@@ -1299,8 +1299,8 @@ def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=Non
     #print('norm',norm(clevs))
 
     plotproj=ccrs.Mollweide(central_longitude=200)   # any projections should work 
-    clat = (lat.values.min()+lat.values.max())/2.
-    clon = (lon.values.min()+lon.values.max())/2.
+    #clat = (lat.values.min()+lat.values.max())/2.
+    #clon = (lon.values.min()+lon.values.max())/2.
     #plotproj=ccrs.NearsidePerspective(central_longitude=clon, central_latitude=clat)
     plotproj=ccrs.Mercator()
     #ax = plt.axes(projection=plotproj)
