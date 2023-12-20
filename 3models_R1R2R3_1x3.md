@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.0
+      jupytext_version: 1.15.2
   kernelspec:
     display_name: pjrpy3
     language: python
@@ -708,5 +708,150 @@ else:
 ```
 
 ```python
-1./0.
+def getvarDS(Varname,fstring,case_start,case_end,regtag=''):
+    """getvar DS
+       get variable from file specifying the formatting of the dataset file names
+    """
+    ind = fstring % (case_start,Varname,case_end)
+    print('opening',ind)
+    DS = xr.open_mfdataset(ind).chunk({'time': 12}).transpose('ncol'+regtag,...) 
+    DS = center_time(DS)
+    #DS.coords['lon'] = (DS.coords['lon'] + 180) % 360 - 180
+    #DS = DS.sortby(DS.lon)
+    Var = xr_getvar(Varname,DS)
+    #VM = Var.mean(dim='time',keep_attrs=True)
+    return Var;
+
+def derfldDS(VN, fstring1, case_start1, case_end1):
+    """ calculate some derived fields specifying formatting of file names
+    RESTOM is Top of Model Residual energy imbalance (In - Out)
+    PRECT is total precip
+    """
+    if VN == 'RESTOM':    
+        FSNT = getvarDS('FSNT', fstring1, case_start1, case_end1)
+        FLNT = getvarDS('FLNT', fstring1, case_start1, case_end1)
+        RESTOM = FSNT - FLNT
+        RESTOM = RESTOM.rename('RESTOM')
+        RESTOM.attrs['long_name'] = 'TOA imbalance'
+        return RESTOM   
+    elif VN == 'PRECT':
+        PRECL = getvarDS('PRECL', fstring1, case_start1, case_end1)
+        PRECC = getvarDS('PRECC', fstring1, case_start1, case_end1)
+        PRECT = PRECL+PRECC
+        PRECT = PRECT.rename('PRECT')
+        PRECT.attrs['long_name'] = 'total precipitation (liq + ice)'
+        return PRECT
+    elif VN == "DPOG": 
+        Varname = 'T'
+        ind = fstring1 % (case_start1,Varname,case_end1)
+        print('opening',ind)
+        DS = xr.open_mfdataset(ind).chunk({'time': 12}).transpose('ncol',...) 
+        DS = center_time(DS)
+        #DS.coords['lon'] = (DS.coords['lon'] + 180) % 360 - 180
+        #DS = DS.sortby(DS.lon)
+        Var = xr_getvar(Varname,DS)
+        # special treatment for constructing a 3D pressure from PS and
+        # hybrid coefs
+        VarI = (DS['PS']*DS.hybi + DS.hyai*DS.P0)
+        print('VarI',VarI)
+        #print('VarI col 0',VarI[0,0,:].values)
+        #print('PS',DS['PS'+regtag])
+        print('using this variable as a template for DPOG',Varname)
+        Var = Var.rename(Varname)
+        #print('Var',Var)
+        Varx = VarI.diff("ilev").values/9.8
+        #print('Varx',Varx.shape)
+        Var.data = Varx
+        Var.attrs = {}
+        #print('new Var col 0', Var[0,0,:].values)
+        Var.attrs["units"] = 'kg/m2'
+        #Var.attrs["basename"] = 'DPOG'
+        Var.attrs["long_name"] = 'DeltaPressure(interfaces)_over_gravity'
+#            latr = var.attrs
+#            if 'standard_name' in latr.keys():
+#                x = Var.attrs.pop("standard_name")
+        #print('VarO',Var)
+        # make sure the returned quantities have the same coordinate order as standard
+        #ldims = list(DS['T'+regtag].dims)
+        #Var = Var.transpose(*ldims)
+        #print('newPin.dims', Pin.dims)
+        #print('newPin.shape', Pin.shape)
+        return Var
+    else:
+        return getvarDS(VN, fstring1, case_start1, case_end1)
+    
+```
+
+```python
+# working from the time series files
+#case_start2 = '/e3sm_prod/mingxuan/archive/20230405.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01/reshaped/20230405.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01.eam.h0.1-6.'
+#case_end2 = '.nc'
+case_start2 = '/e3sm_prod/phil/tseries/e3sm/20230405.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01/'
+case_end2 = '_20230405.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01_000101_002112.nc'
+pref2='28Tgpyr,R1-3'
+fstring2 ='%s%s%s'
+
+ne30area = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
+DSA = xr.open_mfdataset(ne30area)
+lon = xr_getvar('lon',DSA)
+lat = xr_getvar('lat',DSA)
+area = xr_getvar('area',DSA)
+
+Varname='TS'
+#Varname='PRECT'
+
+
+def bld_fname_e1(casename, Varname):
+    fname = '/e3sm_prod/phil/timeseries/e3sm-reshaped/'+casename+"/"+casename+".eam.h0.2015-*."+Varname+".nc"
+    return fname
+
+def bld_fname_e2(casename, Varname):
+    fname = "/e3sm_prod/phil/timeseries/e3sm-reshaped/"+casename+"/"+Varname+"_201501_*.nc"
+    return fname
+
+casename_ctl = '20221014.v2.LR.WCYCLSSP245.E2_CNTL_01'
+
+ind_ctl = bld_fname_e1(casename_ctl, Varname)
+print('ind_ctl',ind_ctl)
+
+ind1 = '/e3sm_prod/phil/timeseries/e3sm-reshaped/20221014.v2.LR.WCYCLSSP245.E2_CNTL_01/20221014.v2.LR.WCYCLSSP245.E2_CNTL_01.eam.h0.2015-2046.TS.nc'
+#print('ind-xtl',ind1)
+
+ind2 = '/e3sm_prod/phil/timeseries/e3sm-reshaped/20230724.v2.LR.WCYCLSSP245.MCB-SSLT-EM.R1-3.test01/TS_201501_204412.nc'
+print('ind_xtb',ind2)
+
+casename_ptb='20230724.v2.LR.WCYCLSSP245.MCB-SSLT-EM.R1-3.test01'
+
+ind_ptb = bld_fname_e2(casename_ptb, Varname)
+print('ind_ptb',ind_ptb)
+
+DS1 = xr.open_mfdataset(ind_ptb)
+DS1 = center_time(DS1)
+DS1 = DS1.sel(time=slice("2020-01-01","2030-01-01"))
+Var1 = DS1[Varname]
+Var1y = tavg_mon_wt(Var1)
+V1 = Var1y.mean('time')
+Var1yga = V1.weighted(area).mean('ncol',keep_attrs=True)
+
+DS2 = xr.open_mfdataset(ind_ctl)
+DS2 = center_time(DS2)
+DS2 = DS2.sel(time=slice("2020-01-01","2030-01-01"))
+Var2 = DS2[Varname]
+Var2y = tavg_mon_wt(Var2)
+V2 = Var2y.mean('time')
+Var2yga = V2.weighted(area).mean('ncol',keep_attrs=True)
+
+DV = V1-V2
+```
+
+```python
+plotproj = ccrs.Mollweide()
+plotproj._threshold /= 100.
+fig, axes = plt.subplots(ncols=3
+                         ,gridspec_kw={'width_ratios': [1, 1, 1]}
+                         ,subplot_kw={'projection': plotproj}
+                         ,figsize=(16,5)
+                        )
+
+xr_cshplot(DV, lon, lat,ax=axes[1],ylabels=False)
 ```
