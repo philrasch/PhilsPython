@@ -1674,6 +1674,8 @@ def tavg_mon_wt(xr_var):
     ones_out = (ones * wgts).resample(time="YS").sum(dim="time")
     wavg = obs_sum / ones_out
     wavg['time'] = wavg.time+timedelta(days=182.5)
+    if len(wavg['time'].values)*12 != len(xr_var['time'].values):
+        raise Exception("time series inconsistency, either variable input partial year provided or input times are not correct")
     # Return the weighted average
     return wavg
 
