@@ -1668,10 +1668,10 @@ def tavg_mon_wt(xr_var):
     ones = xr.where(cond, 0.0, 1.0)
 
     # Calculate the numerator
-    obs_sum = (obs * wgts).resample(time="AS").sum(dim="time")
+    obs_sum = (obs * wgts).resample(time="YS").sum(dim="time")
 
     # Calculate the denominator
-    ones_out = (ones * wgts).resample(time="AS").sum(dim="time")
+    ones_out = (ones * wgts).resample(time="YS").sum(dim="time")
     wavg = obs_sum / ones_out
     wavg['time'] = wavg.time+timedelta(days=182.5)
     # Return the weighted average
