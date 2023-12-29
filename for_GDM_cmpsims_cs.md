@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.5
+      jupytext_version: 1.15.2
   kernelspec:
     display_name: Python [conda env:.conda-pjrpy3] *
     language: python
@@ -23,6 +23,9 @@ print(sys.version)
 %run -i ~/Python/pjr3
 from jupytext.config import find_jupytext_configuration_file
 print('jupytext config file is ',find_jupytext_configuration_file('.'))
+
+#import warnings
+#warnings.simplefilter("error")
 
 
 ne30area = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
@@ -64,7 +67,6 @@ def getvarDS(Varname,fstring,case_start,case_end,regtag=''):
     DS = center_time(DS)
     #DS.coords['lon'] = (DS.coords['lon'] + 180) % 360 - 180
     #DS = DS.sortby(DS.lon)
-    
     Var = xr_getvar(Varname,DS)
     #VM = Var.mean(dim='time',keep_attrs=True)
     return Var;

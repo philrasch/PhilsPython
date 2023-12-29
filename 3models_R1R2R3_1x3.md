@@ -177,6 +177,35 @@ def xr_llhplot2 (xrVar, cbar='default', plotproj=None, ax=None, cax=None,
 ```
 
 ```python
+if False:
+    # create a PRECT dataset from PRECL and PRECC
+    def bld_fname2(casename, Varname):
+        fname = "/e3sm_prod/phil/timeseries/cesm2-mcb-reshaped/"+casename+"/"+casename+".cam.h0.2015-*."+Varname+".nc"
+        return fname
+
+    def bld_fnameo(casename, Varname):
+        fname = "/e3sm_prod/phil/timeseries/cesm2-mcb-reshaped/"+casename+"/"+casename+".cam.h0.2015-2065."+Varname+".nc"
+        return fname
+
+    casename1 = "b.e21.BSSP245smbb_MCBss7TgYr_R1R2R3.f09_g17.LE2-1011.001"
+    ind1 = bld_fname2(casename1, 'PRECL')
+    ind2 = bld_fname2(casename1, 'PRECC')
+    DS1 = xr.open_mfdataset(ind1)
+    DS2 = xr.open_mfdataset(ind2)
+    PRECT = DS1['PRECL']+DS2['PRECC']
+    PRECT = PRECT.rename('PRECT')
+    PRECT.attrs['long_name'] = 'Total Precipitation'
+    time_bnds = DS1['time_bnds']
+    ind3 = bld_fnameo(casename1, 'PRECT')
+
+    # Save one DataArray as dataset
+    DSOUT = PRECT.to_dataset(name = 'PRECT')
+    # Add second DataArray to existing dataset (ds)
+    DSOUT['time_bnds'] = time_bnds
+    DSOUT.to_netcdf(ind3)
+```
+
+```python
 casename0 = "b.e21.BSSP245smbb.f09_g17.001"  # reference run
 casename1 = "b.e21.BSSP245smbb_MCBss7TgYr_R1R2R3.f09_g17.LE2-1011.001"
 pref1='R1'
@@ -185,98 +214,62 @@ prefmod='CESM_Coupled_MCBSSE123'
 Varname='FSNT'
 #Varname='SWCF'
 Varname='TS'
-#Varname='PRECT'
+Varname='PRECT'
+
+def create_CESM_var (Varname):
+
+    def bld_fname2(casename, Varname):
+        fname = "/e3sm_prod/phil/timeseries/cesm2-mcb-reshaped/"+casename+"/"+casename+".cam.h0.2015-*."+Varname+".nc"
+        return fname
+
+    def bld_fname3(casename, Varname):
+        fname = "/e3sm_prod/phil/timeseries/cesm2-mcb-reshaped/CESM2_SSP245/ens001/"+casename+".cam.h0."+Varname+".201501-206412.nc"
+        return fname
+
+    ind0 = bld_fname3(casename0, Varname)
+    print('ind0',ind0)
+    DS0 = center_time(xr.open_mfdataset(ind0))
+    ind1 = bld_fname2(casename1, Varname)
+    print('ind1',ind1)
+    DS1 = center_time(xr.open_mfdataset(ind1))
+
+    #print('DS0',DS0)
+    #print('DS1',DS1)
+    DS0, DS1 = reconcile_xr_coords(DS0, DS1)
+    print('DS0.time',len(DS0.time.values))
+    print('DS1.time',len(DS1.time.values))
+    # grab part of the data
+    #DS0 = DS0.isel(time=slice(0,120))
+    yb = '2020-01-01'
+    ye = '2030-01-01'
+    DS0 = DS0.sel(time=slice(yb,ye))
+    DS1 = DS1.sel(time=slice(yb,ye))
 
 
-def bld_fname2(casename, Varname):
-    fname = "/e3sm_prod/phil/timeseries/cesm2-mcb-reshaped/"+casename+"/"+casename+".cam.h0.2015-*."+Varname+".nc"
-    return fname
+    long_name = None
+    if Varname == 'PRECT': long_name = 'Precip'
+    if Varname == 'TS': long_name = "Surface Temperature"
 
-def bld_fname3(casename, Varname):
-    fname = "/e3sm_prod/phil/timeseries/cesm2-mcb-reshaped/CESM2_SSP245/ens001/"+casename+".cam.h0."+Varname+".201501-206412.nc"
-    return fname
+    C0 = xr_getvar(Varname, DS0,long_name=long_name).mean(dim="time")
+    C1 = xr_getvar(Varname, DS1,long_name=long_name).mean(dim="time")
 
-ind0 = bld_fname3(casename0, Varname)
-print('ind0',ind0)
-DS0 = center_time(xr.open_mfdataset(ind0))
-ind1 = bld_fname2(casename1, Varname)
-print('ind1',ind1)
-DS1 = center_time(xr.open_mfdataset(ind1))
+    if 'area' in DS1:
+        area = DS1['area']
+    else:
+        print('calculating weights')
+        lat = DS1['lat'].values
+        lon = DS1['lon'].values
+        aread = make_fvarea(lon,lat)
+        area = xr.DataArray(aread, dims=['lat','lon'], coords={'lon':lon,'lat':lat})
+        area.attrs['units']='steradians'
+        #print('area',area)
 
-#print('DS0',DS0)
-#print('DS1',DS1)
-DS0, DS1 = reconcile_xr_coords(DS0, DS1)
-print('DS0.time',len(DS0.time.values))
-print('DS1.time',len(DS1.time.values))
-# grab part of the data
-#DS0 = DS0.isel(time=slice(0,120))
-yb = '2020-01-01'
-ye = '2030-01-01'
-DS0 = DS0.sel(time=slice(yb,ye))
-DS1 = DS1.sel(time=slice(yb,ye))
+    DV = C1-C0
+    return DV, lat, lon, area
 
+D_CESM_TS, lat_cesm, lon_cesm, area_cesm = create_CESM_var ('TS')
+D_CESM_Pr, lat_cesm, lon_cesm, area_cesm = create_CESM_var ('PRECT')
 
-long_name = None
-if Varname == 'PRECT': long_name = 'Precip'
-if Varname == 'TS': long_name = "Surface Temperature"
-    
-C0 = xr_getvar(Varname, DS0,long_name=long_name).mean(dim="time")
-C1 = xr_getvar(Varname, DS1,long_name=long_name).mean(dim="time")
-
-if 'area' in DS1:
-    area = DS1['area']
-else:
-    print('calculating weights')
-    lat = DS1['lat'].values
-    lon = DS1['lon'].values
-    aread = make_fvarea(lon,lat)
-    area = xr.DataArray(aread, dims=['lat','lon'], coords={'lon':lon,'lat':lat})
-    area.attrs['units']='steradians'
-    #print('area',area)
-
-wdims = area.dims
-#print('wdims',wdims)
-weights = area/(area.sum(dim=wdims))
-#print('weights sum',weights.shape,weights.sum(dim=wdims).values)
-    
-
-#dlevs=None
-#clevs=None
-
-C0A = C0.weighted(weights).mean()
-print("C0A",C0A.values)
-
-C1A = C1.weighted(weights).mean()
-C1AD = C1A - C0A
-#print('C1A,V2A',C1A.values,V2A.values)
-#print(C1AD)
-sC1AD = ' (%5.2f)' % C1AD
-dlevs = None
-
-fig, axes = setfig()
-print('axes', axes.shape, axes)
-axf = axes.flatten()
-
-D1 = C1-C0
-
-print('min',D1.min().values)
-drmin = np.min([D1.min()])
-drmax = np.max([D1.max()])
-print('drange', drmin, drmax)
-factor = 0.9
-dlevs = findNiceContours(np.array([drmin,drmax])*factor,nlevs = 15,rmClev=0.,sym=True)
-print("dlevs",dlevs)
-dmap = diverge_map()
-
-if True:
-    xr_llhplot2(D1, ax=axf[1],clevs=dlevs,cmap=dmap,title=pref1+sC1AD, ylabels=False)#,cbar=None)
-    pltllbox2([-150.,-110.],[0.,30.],ax=axf[1])
-    pltllbox2([-110.,-70.],[-30.,0.],ax=axf[1])
-    pltllbox2([-25.,15.],[-30.,0.],ax=axf[1])
-
-
-#plt.savefig(prefmod+'_'+Varname+'-D.pdf',format='pdf',dpi=300,transparent=True)#,facecolor='xkcd:mint green')
-plt.show()
 ```
 
 ```python
@@ -531,6 +524,627 @@ Varlist = np.array(['T_surface_K'])
 #Varlist = np.array(['LWP_kg_m2','net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2','cloud_fraction'])
 #Varlist = np.array(['cloud_fraction'])
 #Varlist = np.array(['net_ToA_SW_W_m2'])
+#Varlist = np.array(['precip_rate_kg_m2_sec'])
+
+FSNT1 = None
+FSNT2 = None
+FSNTC1 = None
+FSNTC2 = None
+
+# specify regions (assume lon always specified as west, then east limit)
+xreg = np.array([[-150.,-110.],[-110,-70],[-25.,15.],[170.,-120.],[-170.,-90.]])%360.
+yreg = np.array([[0.,30.],     [-30.,0.], [-30.,0.], [30.,50.],   [-50.,-30.] ])
+namereg = ['NEP','SEP','SEA','NP','SP']
+#xreg = [[0.,360.]]
+#yreg = [[-90.,91.]]
+
+def makesyn(Varname):
+    reglist = np.array(['R1_NEP','R2_SEP','R3_SEA'])
+    #reglist = np.array(['R2_SEP'])
+    #reglist = np.array(['R3_SEA'])
+    #reglist = np.array(['R1_NEP'])
+
+    filetype = None
+    filetype = 'Fixed_SST'
+    filetype = 'Coupled'
+    
+    nreg = 0
+    for REG_ID in reglist:
+        #ind1 = fstring1 % (case_start1,Varname,case_end1)
+        ind1 = make_ind1(REG_ID,Varname,filetype)
+        print('ind1 opening',ind1)
+        DS1 = xr.open_mfdataset(ind1)
+        #print('xxx',DS1.time_bnds.values)
+        DS1 = fix_UKMO_ds(ind1, DS1)
+        #print('DS1.lon',DS1.lon.values)
+        #DS1 = center_time(DS1)
+        VN = Vdict[Varname]
+        print('VN is ',VN)
+        V1 = xr_getvar_sl(VN,DS1,method='maxb850')
+        #print('V1',V1)
+        ind2 = make_ind2(REG_ID,Varname,filetype)
+        print('opening ind2',ind2)
+        #DS2 = xr.open_mfdataset(ind2)
+        DS2 = xr.open_mfdataset(ind2)
+        DS2 = fix_UKMO_ds(ind2, DS2)
+        V2 = xr_getvar_sl(VN,DS2,method='maxb850')
+
+        DV = V1-V2
+
+        weights = None
+        if 'area' in DS1:
+            area = DS1['area']
+        elif 'area' in DS2:
+            area = DS2['area']
+        else:
+            print('calculating areas')
+            lat = V1['lat'].values
+            lon = V1['lon'].values
+            area = make_fvarea(lon,lat)
+        weights = V1.copy()
+        weights.data =area
+        weights.attrs['units']='steradians'
+
+        if nreg == 0:
+            DVS = DV
+            nreg = 1
+        else:
+            DVS = DVS + DV
+            nreg = nreg+1
+    print(' all regions accumulated')
+
+    long_name = None
+    if VN == 'PRECT': long_name = 'Precip'
+    if VN == 'TS': long_name = "Surface Temperature"
+    if not long_name is None:
+        DVS.attrs['long_name'] = long_name
+        print('aaa')
+    
+    return DVS, lat, lon, area
+ 
+D_UKESM_TS, lat_ukesm, lon_ukesm, area_ukesm = makesyn('T_surface_K')
+D_UKESM_Pr, lat_ukesm, lon_ukesm, area_ukesm = makesyn('precip_rate_kg_m2_sec')
+
+# rescale the temperature and precipitation response to 25 Tg/year, assuming it is linear
+D_UKESM_TS = D_UKESM_TS*0.5
+D_UKESM_Pr = D_UKESM_Pr*0.5
+
+weights = D_UKESM_TS.copy()
+weights = weights.rename('weights')
+weights.data =area_ukesm
+weights.attrs['units']='steradians'
+weights_ukesm = weights
+
+
+```
+
+```python
+# process E3SM data
+```
+
+```python
+def getvarDS(Varname,fstring,case_start,case_end,regtag=''):
+    """getvar DS
+       get variable from file specifying the formatting of the dataset file names
+    """
+    ind = fstring % (case_start,Varname,case_end)
+    print('opening',ind)
+    DS = xr.open_mfdataset(ind).chunk({'time': 12}).transpose('ncol'+regtag,...) 
+    DS = center_time(DS)
+    #DS.coords['lon'] = (DS.coords['lon'] + 180) % 360 - 180
+    #DS = DS.sortby(DS.lon)
+    Var = xr_getvar(Varname,DS)
+    #VM = Var.mean(dim='time',keep_attrs=True)
+    return Var;
+
+def derfldDS(VN, fstring1, case_start1, case_end1):
+    """ calculate some derived fields specifying formatting of file names
+    RESTOM is Top of Model Residual energy imbalance (In - Out)
+    PRECT is total precip
+    """
+    if VN == 'RESTOM':    
+        FSNT = getvarDS('FSNT', fstring1, case_start1, case_end1)
+        FLNT = getvarDS('FLNT', fstring1, case_start1, case_end1)
+        RESTOM = FSNT - FLNT
+        RESTOM = RESTOM.rename('RESTOM')
+        RESTOM.attrs['long_name'] = 'TOA imbalance'
+        return RESTOM   
+    elif VN == 'PRECT':
+        PRECL = getvarDS('PRECL', fstring1, case_start1, case_end1)
+        PRECC = getvarDS('PRECC', fstring1, case_start1, case_end1)
+        PRECT = PRECL+PRECC
+        PRECT = PRECT.rename('PRECT')
+        PRECT.attrs['long_name'] = 'total precipitation (liq + ice)'
+        return PRECT
+    elif VN == "DPOG": 
+        Varname = 'T'
+        ind = fstring1 % (case_start1,Varname,case_end1)
+        print('opening',ind)
+        DS = xr.open_mfdataset(ind).chunk({'time': 12}).transpose('ncol',...) 
+        DS = center_time(DS)
+        #DS.coords['lon'] = (DS.coords['lon'] + 180) % 360 - 180
+        #DS = DS.sortby(DS.lon)
+        Var = xr_getvar(Varname,DS)
+        # special treatment for constructing a 3D pressure from PS and
+        # hybrid coefs
+        VarI = (DS['PS']*DS.hybi + DS.hyai*DS.P0)
+        print('VarI',VarI)
+        #print('VarI col 0',VarI[0,0,:].values)
+        #print('PS',DS['PS'+regtag])
+        print('using this variable as a template for DPOG',Varname)
+        Var = Var.rename(Varname)
+        #print('Var',Var)
+        Varx = VarI.diff("ilev").values/9.8
+        #print('Varx',Varx.shape)
+        Var.data = Varx
+        Var.attrs = {}
+        #print('new Var col 0', Var[0,0,:].values)
+        Var.attrs["units"] = 'kg/m2'
+        #Var.attrs["basename"] = 'DPOG'
+        Var.attrs["long_name"] = 'DeltaPressure(interfaces)_over_gravity'
+#            latr = var.attrs
+#            if 'standard_name' in latr.keys():
+#                x = Var.attrs.pop("standard_name")
+        #print('VarO',Var)
+        # make sure the returned quantities have the same coordinate order as standard
+        #ldims = list(DS['T'+regtag].dims)
+        #Var = Var.transpose(*ldims)
+        #print('newPin.dims', Pin.dims)
+        #print('newPin.shape', Pin.shape)
+        return Var
+    else:
+        return getvarDS(VN, fstring1, case_start1, case_end1)
+    
+```
+
+```python
+if False:
+    # create a PRECT dataset from PRECL and PRECC
+    
+    def bld_fname_e1(casename, Varname):
+        fname = '/e3sm_prod/phil/timeseries/e3sm-reshaped/'+casename+"/"+casename+".eam.h0.2015-*."+Varname+".nc"
+        return fname
+
+    def bld_fname_e2(casename, Varname):
+        fname = "/e3sm_prod/phil/timeseries/e3sm-reshaped/"+casename+"/"+Varname+"_201501_*.nc"
+        return fname
+
+    def bld_fname_out(casename, Varname):
+        fname = '/e3sm_prod/phil/timeseries/e3sm-reshaped/'+casename+"/"+casename+".eam.h0.2015-2046."+Varname+".nc"
+        #fname = "/e3sm_prod/phil/timeseries/e3sm-reshaped/"+casename+"/"+Varname+"_201501_204412.nc"
+        return fname
+    
+    casename_ctl = '20221014.v2.LR.WCYCLSSP245.E2_CNTL_01'
+    casename1 = casename_ctl
+    #casename_ptb='20230724.v2.LR.WCYCLSSP245.MCB-SSLT-EM.R1-3.test01'
+    #casename1 = casename_ptb
+
+    ind1 = bld_fname_e1(casename1, 'PRECL')
+    print('ind1',ind1)
+    DS1 = xr.open_mfdataset(ind1)
+    ind2 = bld_fname_e1(casename1, 'PRECC')
+    DS2 = xr.open_mfdataset(ind2)
+    PRECT = DS1['PRECL']+DS2['PRECC']
+    PRECT = PRECT.rename('PRECT')
+    PRECT.attrs['long_name'] = 'Total Precipitation'
+
+    time_bnds = DS1['time_bnds']
+    ind3 = bld_fname_out(casename1, 'PRECT')
+    print('ind3 output',ind3)
+    # Save one DataArray as dataset
+    DSOUT = PRECT.to_dataset(name = 'PRECT')
+    # Add second DataArray to existing dataset (ds)
+    DSOUT['time_bnds'] = time_bnds
+    DSOUT.to_netcdf(ind3)
+```
+
+```python
+if False:
+    # create a PRECT dataset from PRECL and PRECC
+    
+    def bld_fname_e1(casename, Varname):
+        fname = '/e3sm_prod/phil/timeseries/e3sm-reshaped/'+casename+"/"+casename+".eam.h0.2015-*."+Varname+".nc"
+        return fname
+
+    def bld_fname_e2(casename, Varname):
+        fname = "/e3sm_prod/phil/timeseries/e3sm-reshaped/"+casename+"/"+Varname+"_201501_*.nc"
+        return fname
+
+    def bld_fname_out(casename, Varname):
+        fname = '/e3sm_prod/phil/timeseries/e3sm-reshaped/'+casename+"/"+casename+".eam.h0.2015-2046."+Varname+".nc"
+        #fname = "/e3sm_prod/phil/timeseries/e3sm-reshaped/"+casename+"/"+Varname+"_201501_204412.nc"
+        return fname
+    
+    casename_ctl = '20221014.v2.LR.WCYCLSSP245.E2_CNTL_01'
+    casename1 = casename_ctl
+    #casename_ptb='20230724.v2.LR.WCYCLSSP245.MCB-SSLT-EM.R1-3.test01'
+    #casename1 = casename_ptb
+
+    ind1 = bld_fname_e1(casename1, 'PRECL')
+    print('ind1',ind1)
+    DS1 = xr.open_mfdataset(ind1)
+    ind2 = bld_fname_e1(casename1, 'PRECC')
+    DS2 = xr.open_mfdataset(ind2)
+    PRECT = DS1['PRECL']+DS2['PRECC']
+    PRECT = PRECT.rename('PRECT')
+    PRECT.attrs['long_name'] = 'Total Precipitation'
+
+    time_bnds = DS1['time_bnds']
+    ind3 = bld_fname_out(casename1, 'PRECT')
+    print('ind3 output',ind3)
+    # Save one DataArray as dataset
+    DSOUT = PRECT.to_dataset(name = 'PRECT')
+    # Add second DataArray to existing dataset (ds)
+    DSOUT['time_bnds'] = time_bnds
+    DSOUT.to_netcdf(ind3)
+```
+
+```python
+def create_E3SM_var (Varname):
+    
+    ne30area = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
+    DSA = xr.open_mfdataset(ne30area)
+    lon = xr_getvar('lon',DSA)
+    lat = xr_getvar('lat',DSA)
+    area = xr_getvar('area',DSA)
+    
+    def bld_fname_e1(casename, Varname):
+        fname = '/e3sm_prod/phil/timeseries/e3sm-reshaped/'+casename+"/"+casename+".eam.h0.2015-*."+Varname+".nc"
+        return fname
+
+    def bld_fname_e2(casename, Varname):
+        fname = "/e3sm_prod/phil/timeseries/e3sm-reshaped/"+casename+"/"+Varname+"_201501_*.nc"
+        return fname
+
+    casename_ctl = '20221014.v2.LR.WCYCLSSP245.E2_CNTL_01'
+
+    ind_ctl = bld_fname_e1(casename_ctl, Varname)
+    print('ind_ctl',ind_ctl)
+
+    ind1 = '/e3sm_prod/phil/timeseries/e3sm-reshaped/20221014.v2.LR.WCYCLSSP245.E2_CNTL_01/20221014.v2.LR.WCYCLSSP245.E2_CNTL_01.eam.h0.2015-2046.TS.nc'
+    #print('ind-xtl',ind1)
+
+    #ind2 = '/e3sm_prod/phil/timeseries/e3sm-reshaped/20230724.v2.LR.WCYCLSSP245.MCB-SSLT-EM.R1-3.test01/TS_201501_204412.nc'
+    #print('ind_xtb',ind2)
+    casename_ptb='20230724.v2.LR.WCYCLSSP245.MCB-SSLT-EM.R1-3.test01'
+
+    ind_ptb = bld_fname_e2(casename_ptb, Varname)
+    DS1 = xr.open_mfdataset(ind_ptb)
+    DS1 = center_time(DS1)
+    DS1 = DS1.sel(time=slice("2020-01-01","2030-01-01"))
+    Var1 = xr_getvar(Varname, DS1)
+    Var1y = tavg_mon_wt(Var1)
+    V1 = Var1y.mean('time')
+    Var1yga = V1.weighted(area).mean('ncol',keep_attrs=True)
+
+    DS2 = xr.open_mfdataset(ind_ctl)
+    DS2 = center_time(DS2)
+    DS2 = DS2.sel(time=slice("2020-01-01","2030-01-01"))
+    Var2 = xr_getvar(Varname, DS2)
+    Var2y = tavg_mon_wt(Var2)
+    V2 = Var2y.mean('time')
+    Var2yga = V2.weighted(area).mean('ncol',keep_attrs=True)
+
+
+    DV = V1-V2
+    
+    return DV, lat, lon, area
+
+D_E3SM_TS, lat_e3sm, lon_e3sm, area_e3sm = create_E3SM_var('TS')
+D_E3SM_Pr, lat_e3sm, lon_e3sm, area_e3sm = create_E3SM_var('PRECT')
+print(lat_e3sm)
+```
+
+```python
+print ('E3SM results')
+
+fig, axes = setfig()
+axf = axes.flatten()
+
+print('T range ', D_E3SM_TS.min().values, D_E3SM_TS.max().values)
+print('Pr range ', D_E3SM_Pr.min().values, D_E3SM_Pr.max().values)
+
+xr_cshplot(D_E3SM_TS, lon_e3sm, lat_e3sm, ax=axf[4],ylabels=False)
+xr_cshplot(D_E3SM_Pr, lon_e3sm, lat_e3sm, ax=axf[1],ylabels=False)
+```
+
+```python
+# all data has been processed. Now we can plot stuff
+```
+
+```python
+print('UKESM results')
+# now do some plotting
+fig, axes = setfig()
+axf = axes.flatten()
+
+prefsum = ''
+
+DVA = D_UKESM_TS.weighted(weights).mean()
+sDVA = ' ({:5.2f}{:s})'.format(DVA.values, DVA.units)
+print('yyy', sDVA)
+print('accumulated area Delta %5.2f' % (DVA.values))
+fname = pref_fn+'_'+Varname+'_'+DVA.name+'-D.pdf'
+drmin = np.min([D_UKESM_TS.min()])
+drmax = np.max([D_UKESM_TS.max()])
+print('T drange', drmin, drmax)
+factor = 0.8
+dlevs = findNiceContours(np.array([drmin,drmax])*factor,nlevs = 15,rmClev=0.,sym=True)
+print("dlevs",dlevs)
+dmap = diverge_map()
+
+xr_llhplot2(D_UKESM_TS, ax=axf[4],clevs=dlevs,cmap=dmap,title=prefsum+sDVA, ylabels=False)#,cbar=None)
+pltllbox2([-150.,-110.],[0.,30.],ax=axf[4])
+pltllbox2([-110.,-70.],[-30.,0.],ax=axf[4])
+pltllbox2([-25.,15.],[-30.,0.],ax=axf[4])
+
+DVA = D_UKESM_Pr.weighted(weights).mean()
+sDVA = ' ({:5.2f}{:s})'.format(DVA.values, DVA.units)
+print('yyy', sDVA)
+print('accumulated area Delta %5.2f' % (DVA.values))
+fname = pref_fn+'_'+Varname+'_'+DVA.name+'-D.pdf'
+drmin = np.min([D_UKESM_Pr.min()])
+drmax = np.max([D_UKESM_Pr.max()])
+print('precip drange', drmin, drmax)
+factor = 0.8
+dlevs = findNiceContours(np.array([drmin,drmax])*factor,nlevs = 15,rmClev=0.,sym=True)
+print("dlevs",dlevs)
+dmap = diverge_map()
+dmap = plt.get_cmap('BrBG')
+
+xr_llhplot2(D_UKESM_Pr, ax=axf[1],clevs=dlevs,cmap=dmap,title=prefsum+sDVA, ylabels=False)#,cbar=None)
+pltllbox2([-150.,-110.],[0.,30.],ax=axf[1])
+pltllbox2([-110.,-70.],[-30.,0.],ax=axf[1])
+pltllbox2([-25.,15.],[-30.,0.],ax=axf[1])
+#plt.savefig(prefmod+'_'+Varname+'-D.pdf',format='pdf',dpi=300,transparent=True)#,facecolor='xkcd:mint green')
+plt.show()
+
+```
+
+```python
+print('CESM results')
+
+wdims = area_cesm.dims
+#print('wdims',wdims)
+weights = area_cesm/(area_cesm.sum(dim=wdims))
+
+dlevs = None
+
+fig, axes = setfig()
+print('axes', axes.shape, axes)
+axf = axes.flatten()
+
+D1 = D_CESM_Pr
+D1A = D1.weighted(weights).mean()
+sD1A = ' ({:5.2f}{:s})'.format(D1A.values, D1A.units)
+sD1A = ' ({:5.2f})'.format(D1A.values)
+print('sC1AD',sD1A)
+
+pref1 = 'GA:'
+drmin = np.min([D1.min()])
+drmax = np.max([D1.max()])
+print('precip drange', drmin, drmax)
+factor = 0.9
+dlevs = findNiceContours(np.array([drmin,drmax])*factor,nlevs = 15,rmClev=0.,sym=True)
+print("dlevs",dlevs)
+dmap = diverge_map()
+dmap = plt.get_cmap('BrBG')
+
+
+if True:
+    xr_llhplot2(D1, ax=axf[1],clevs=dlevs,cmap=dmap,title=pref1+sD1A, ylabels=False)#,cbar=None)
+    pltllbox2([-150.,-110.],[0.,30.],ax=axf[1])
+    pltllbox2([-110.,-70.],[-30.,0.],ax=axf[1])
+    pltllbox2([-25.,15.],[-30.,0.],ax=axf[1])
+
+D1 = D_CESM_TS
+D1A = D1.weighted(weights).mean()
+sD1A = ' ({:5.2f}{:s})'.format(D1A.values, D1A.units)
+sD1A = ' ({:5.2f})'.format(D1A.values)
+print('sC1AD',sD1A)
+
+pref1 = 'GA:'
+drmin = np.min([D1.min()])
+drmax = np.max([D1.max()])
+print('temp drange', drmin, drmax)
+factor = 0.9
+dlevs = findNiceContours(np.array([drmin,drmax])*factor,nlevs = 15,rmClev=0.,sym=True)
+print("dlevs",dlevs)
+dmap = diverge_map()
+#dmap = plt.get_cmap('BrBG')
+
+#print('dmap',dmap)
+
+if True:
+    xr_llhplot2(D1, ax=axf[4],clevs=dlevs,cmap=dmap,title=pref1+sD1A, ylabels=False)#,cbar=None)
+    pltllbox2([-150.,-110.],[0.,30.],ax=axf[4])
+    pltllbox2([-110.,-70.],[-30.,0.],ax=axf[4])
+    pltllbox2([-25.,15.],[-30.,0.],ax=axf[4])
+
+
+#plt.savefig(prefmod+'_'+Varname+'-D.pdf',format='pdf',dpi=300,transparent=True)#,facecolor='xkcd:mint green')
+plt.show()
+```
+
+```python
+print('left center right are UKESM, CESM and E3SM respectively')
+
+wdims = area_cesm.dims
+#print('wdims',wdims)
+weights = area_cesm/(area_cesm.sum(dim=wdims))
+
+dlevs = None
+
+fig, axes = setfig()
+axf = axes.flatten()
+
+pmin = np.min([D_CESM_Pr.min().values,D_UKESM_Pr.min().values,D_E3SM_Pr.min().values])
+pmax = np.max([D_CESM_Pr.max().values,D_UKESM_Pr.max().values,D_E3SM_Pr.max().values])
+factor=0.5
+pdlevs = findNiceContours(np.array([pmin,pmax])*factor,nlevs = 15,rmClev=0.,sym=True)
+print('pdlevs',pdlevs)
+tmin = np.min([D_CESM_TS.min().values,D_UKESM_TS.min().values,D_E3SM_TS.min().values])
+tmax = np.max([D_CESM_TS.max().values,D_UKESM_TS.max().values,D_E3SM_TS.max().values])
+factor=0.6
+tdlevs = findNiceContours(np.array([tmin,tmax])*factor,nlevs = 15,rmClev=0.,sym=True)
+print('tdlevs',tdlevs)
+
+# CESM Stuff
+D1 = D_CESM_Pr
+D1A = D1.weighted(weights).mean()
+sD1A = ' ({:5.2f}{:s})'.format(D1A.values, D1A.units)
+sD1A = ' {:5.2f}'.format(D1A.values)
+print('sC1AD',sD1A)
+
+pref1 = 'GA:'
+
+tcmap = diverge_map()
+pcmap = plt.get_cmap('BrBG')
+
+xr_llhplot2(D1, ax=axf[1],clevs=pdlevs,cmap=pcmap,title=pref1+sD1A, ylabels=False)#,cbar=None)
+pltllbox2([-150.,-110.],[0.,30.],ax=axf[1])
+pltllbox2([-110.,-70.],[-30.,0.],ax=axf[1])
+pltllbox2([-25.,15.],[-30.,0.],ax=axf[1])
+
+D1 = D_CESM_TS
+D1A = D1.weighted(weights).mean()
+sD1A = ' ({:5.2f}{:s})'.format(D1A.values, D1A.units)
+sD1A = '{:5.2f}'.format(D1A.values)
+print('sC1AD',sD1A)
+
+xr_llhplot2(D1, ax=axf[4],clevs=tdlevs,cmap=tcmap,title=pref1+sD1A, ylabels=False)#,cbar=None)
+pltllbox2([-150.,-110.],[0.,30.],ax=axf[4])
+pltllbox2([-110.,-70.],[-30.,0.],ax=axf[4])
+pltllbox2([-25.,15.],[-30.,0.],ax=axf[4])
+
+# UKESM Stuff
+weights = D_UKESM_TS.copy()
+weights = weights.rename('weights')
+weights.data =area_ukesm
+weights.attrs['units']='steradians'
+
+DVA = D_UKESM_TS.weighted(weights).mean()
+print('DVA',DVA.values)
+sDVA = 'GA:{:5.2f}'.format(DVA.values)
+print('yyy', sDVA)
+print('accumulated area Delta %5.2f' % (DVA.values))
+fname = pref_fn+'_'+Varname+'_'+DVA.name+'-D.pdf'
+
+xr_llhplot2(D_UKESM_TS, ax=axf[3],clevs=tdlevs,cmap=tcmap,title=prefsum+sDVA, ylabels=False, cbar=None)
+pltllbox2([-150.,-110.],[0.,30.],ax=axf[3])
+pltllbox2([-110.,-70.],[-30.,0.],ax=axf[3])
+pltllbox2([-25.,15.],[-30.,0.],ax=axf[3])
+
+DVA = D_UKESM_Pr.weighted(weights).mean()
+sDVA = 'GA:{:5.2f}'.format(DVA.values)
+print('yyy', sDVA)
+print('accumulated area Delta %5.2f' % (DVA.values))
+fname = pref_fn+'_'+Varname+'_'+DVA.name+'-D.pdf'
+
+xr_llhplot2(D_UKESM_Pr, ax=axf[0],clevs=pdlevs,cmap=pcmap,title=prefsum+sDVA, ylabels=False, cbar=None)
+pltllbox2([-150.,-110.],[0.,30.],ax=axf[0])
+pltllbox2([-110.,-70.],[-30.,0.],ax=axf[0])
+pltllbox2([-25.,15.],[-30.,0.],ax=axf[0])
+
+# E3SM stuff
+weights = area_e3sm
+wdims = area_e3sm.dims
+print('wdims',wdims)
+weights = area_e3sm/(area_e3sm.sum(dim=wdims))
+
+DVA = D_E3SM_TS.weighted(weights).mean()
+sDVA = 'GA:{:5.2f}'.format(DVA.values)
+xr_cshplot(D_E3SM_TS, lon_e3sm, lat_e3sm, ax=axf[5],ylabels=False, clevs=tdlevs, cmap=tcmap, cbar=None)
+pltllbox2([-150.,-110.],[0.,30.],ax=axf[5])
+pltllbox2([-110.,-70.],[-30.,0.],ax=axf[5])
+pltllbox2([-25.,15.],[-30.,0.],ax=axf[5])
+posn = axf[5].get_position()
+ax2 = fig.add_axes([0,0,0.1,0.1])
+ax2.set_position([posn.x0-0.005, posn.y0-0.005, posn.width+0.01, posn.height+0.01])
+ax2.patch.set_alpha(0.0)
+ax2.set_axis_off()
+ax2.set_xlim([0,1])
+ax2.set_ylim([0,1])
+ax2.text(0.01,0.93,sDVA,fontsize=6)
+
+DVA = D_E3SM_Pr.weighted(weights).mean()
+sDVA = 'GA:{:5.2f}'.format(DVA.values)
+xr_cshplot(D_E3SM_Pr, lon_e3sm, lat_e3sm, ax=axf[2],ylabels=False, clevs=pdlevs, cmap=pcmap, cbar=None)
+pltllbox2([-150.,-110.],[0.,30.],ax=axf[2])
+pltllbox2([-110.,-70.],[-30.,0.],ax=axf[2])
+pltllbox2([-25.,15.],[-30.,0.],ax=axf[2])
+posn = axf[2].get_position()
+ax2 = fig.add_axes([0,0,0.1,0.1])
+ax2.set_position([posn.x0-0.005, posn.y0-0.005, posn.width+0.01, posn.height+0.01])
+ax2.patch.set_alpha(0.0)
+ax2.set_axis_off()
+ax2.set_xlim([0,1])
+ax2.set_ylim([0,1])
+ax2.text(0.01,0.93,sDVA,fontsize=6)
+ax2.text(0.5,1.1,'E3SM',fontsize=10,va='center',ha='center')
+
+posn = axf[1].get_position()
+ax2 = fig.add_axes([0,0,0.1,0.1])
+ax2.set_position([posn.x0-0.005, posn.y0-0.005, posn.width+0.01, posn.height+0.01])
+ax2.patch.set_alpha(0.0)
+ax2.set_axis_off()
+ax2.set_xlim([0,1])
+ax2.set_ylim([0,1])
+ax2.text(0.5,1.1,'CESM',fontsize=10,va='center',ha='center')
+
+posn = axf[0].get_position()
+ax2 = fig.add_axes([0,0,0.1,0.1])
+ax2.set_position([posn.x0-0.005, posn.y0-0.005, posn.width+0.01, posn.height+0.01])
+ax2.patch.set_alpha(0.0)
+ax2.set_axis_off()
+ax2.set_xlim([0,1])
+ax2.set_ylim([0,1])
+ax2.text(0.5,1.1,'UKESM',fontsize=10,va='center',ha='center')
+
+plt.savefig('For_Sarah.pdf',format='pdf',dpi=300,transparent=True)#,facecolor='xkcd:mint green')
+plt.show()
+```
+
+```python
+weights = area_e3sm
+wdims = area_e3sm.dims
+print('wdims',wdims)
+weights = area_e3sm/(area_e3sm.sum(dim=wdims))
+#D_E3SM_TS, lon_e3sm, lat_e3sm
+```
+
+```python
+print(D_CESM_Pr.min().values,D_UKESM_Pr.min().values,D_E3SM_Pr.min().values)
+print(D_CESM_Pr.max().values,D_UKESM_Pr.max().values,D_E3SM_Pr.max().values)
+pmin = np.min([D_CESM_Pr.min().values,D_UKESM_Pr.min().values,D_E3SM_Pr.min().values])
+pmax = np.max([D_CESM_Pr.max().values,D_UKESM_Pr.max().values,D_E3SM_Pr.max().values])
+pmin
+pmax
+factor=0.8
+pdlevs = findNiceContours(np.array([pmin,pmax])*factor,nlevs = 15,rmClev=0.,sym=True)
+print(pdlevs)
+```
+
+```python
+1./0.
+```
+
+```python
+# make a "synthetic" estimate of the change in field by accumulating differences 
+# set for calculation over 3 areas
+# if both FSNT and FSNTC are requested we also calculate SWCRE
+
+#Varlist = np.array(['p_surface_Pa'])
+#Varlist = np.array(['Outgoing_SW_Clear_W_m2','p_surface_Pa','T_surface_K','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+Varlist = np.array(['Outgoing_SW_Clear_W_m2','precip_rate_kg_m2_sec','PBL_depth_metres','cloudtop_r_e_microns','AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2',
+                    'net_ToA_SW_Clear_W_m2','cloud_fraction'])
+Varlist = np.array(['net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2'])
+#Varlist = np.array(['net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2'])
+#Varlist = np.array(['AOD_550nm','LWP_kg_m2','net_ToA_LW_W_m2','net_ToA_SW_W_m2'])
+Varlist = np.array(['T_surface_K'])
+#Varlist = np.array(['LWP_kg_m2','net_ToA_SW_Clear_W_m2','net_ToA_SW_W_m2','cloud_fraction'])
+#Varlist = np.array(['cloud_fraction'])
+#Varlist = np.array(['net_ToA_SW_W_m2'])
 Varlist = np.array(['precip_rate_kg_m2_sec'])
 
 FSNT1 = None
@@ -554,7 +1168,7 @@ reglist = np.array(['R1_NEP','R2_SEP','R3_SEA'])
 filetype = None
 filetype = 'Fixed_SST'
 filetype = 'Coupled'
-
+    
 for Varname in Varlist:
     print()
     print('-------------------------------'+Varname)
@@ -705,153 +1319,4 @@ else:
     pltllbox2([-110.,-70.],[-30.,0.],ax=axf[4])
     pltllbox2([-25.,15.],[-30.,0.],ax=axf[4])
     plt.show()
-```
-
-```python
-def getvarDS(Varname,fstring,case_start,case_end,regtag=''):
-    """getvar DS
-       get variable from file specifying the formatting of the dataset file names
-    """
-    ind = fstring % (case_start,Varname,case_end)
-    print('opening',ind)
-    DS = xr.open_mfdataset(ind).chunk({'time': 12}).transpose('ncol'+regtag,...) 
-    DS = center_time(DS)
-    #DS.coords['lon'] = (DS.coords['lon'] + 180) % 360 - 180
-    #DS = DS.sortby(DS.lon)
-    Var = xr_getvar(Varname,DS)
-    #VM = Var.mean(dim='time',keep_attrs=True)
-    return Var;
-
-def derfldDS(VN, fstring1, case_start1, case_end1):
-    """ calculate some derived fields specifying formatting of file names
-    RESTOM is Top of Model Residual energy imbalance (In - Out)
-    PRECT is total precip
-    """
-    if VN == 'RESTOM':    
-        FSNT = getvarDS('FSNT', fstring1, case_start1, case_end1)
-        FLNT = getvarDS('FLNT', fstring1, case_start1, case_end1)
-        RESTOM = FSNT - FLNT
-        RESTOM = RESTOM.rename('RESTOM')
-        RESTOM.attrs['long_name'] = 'TOA imbalance'
-        return RESTOM   
-    elif VN == 'PRECT':
-        PRECL = getvarDS('PRECL', fstring1, case_start1, case_end1)
-        PRECC = getvarDS('PRECC', fstring1, case_start1, case_end1)
-        PRECT = PRECL+PRECC
-        PRECT = PRECT.rename('PRECT')
-        PRECT.attrs['long_name'] = 'total precipitation (liq + ice)'
-        return PRECT
-    elif VN == "DPOG": 
-        Varname = 'T'
-        ind = fstring1 % (case_start1,Varname,case_end1)
-        print('opening',ind)
-        DS = xr.open_mfdataset(ind).chunk({'time': 12}).transpose('ncol',...) 
-        DS = center_time(DS)
-        #DS.coords['lon'] = (DS.coords['lon'] + 180) % 360 - 180
-        #DS = DS.sortby(DS.lon)
-        Var = xr_getvar(Varname,DS)
-        # special treatment for constructing a 3D pressure from PS and
-        # hybrid coefs
-        VarI = (DS['PS']*DS.hybi + DS.hyai*DS.P0)
-        print('VarI',VarI)
-        #print('VarI col 0',VarI[0,0,:].values)
-        #print('PS',DS['PS'+regtag])
-        print('using this variable as a template for DPOG',Varname)
-        Var = Var.rename(Varname)
-        #print('Var',Var)
-        Varx = VarI.diff("ilev").values/9.8
-        #print('Varx',Varx.shape)
-        Var.data = Varx
-        Var.attrs = {}
-        #print('new Var col 0', Var[0,0,:].values)
-        Var.attrs["units"] = 'kg/m2'
-        #Var.attrs["basename"] = 'DPOG'
-        Var.attrs["long_name"] = 'DeltaPressure(interfaces)_over_gravity'
-#            latr = var.attrs
-#            if 'standard_name' in latr.keys():
-#                x = Var.attrs.pop("standard_name")
-        #print('VarO',Var)
-        # make sure the returned quantities have the same coordinate order as standard
-        #ldims = list(DS['T'+regtag].dims)
-        #Var = Var.transpose(*ldims)
-        #print('newPin.dims', Pin.dims)
-        #print('newPin.shape', Pin.shape)
-        return Var
-    else:
-        return getvarDS(VN, fstring1, case_start1, case_end1)
-    
-```
-
-```python
-# working from the time series files
-#case_start2 = '/e3sm_prod/mingxuan/archive/20230405.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01/reshaped/20230405.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01.eam.h0.1-6.'
-#case_end2 = '.nc'
-case_start2 = '/e3sm_prod/phil/tseries/e3sm/20230405.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01/'
-case_end2 = '_20230405.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01_000101_002112.nc'
-pref2='28Tgpyr,R1-3'
-fstring2 ='%s%s%s'
-
-ne30area = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
-DSA = xr.open_mfdataset(ne30area)
-lon = xr_getvar('lon',DSA)
-lat = xr_getvar('lat',DSA)
-area = xr_getvar('area',DSA)
-
-Varname='TS'
-#Varname='PRECT'
-
-
-def bld_fname_e1(casename, Varname):
-    fname = '/e3sm_prod/phil/timeseries/e3sm-reshaped/'+casename+"/"+casename+".eam.h0.2015-*."+Varname+".nc"
-    return fname
-
-def bld_fname_e2(casename, Varname):
-    fname = "/e3sm_prod/phil/timeseries/e3sm-reshaped/"+casename+"/"+Varname+"_201501_*.nc"
-    return fname
-
-casename_ctl = '20221014.v2.LR.WCYCLSSP245.E2_CNTL_01'
-
-ind_ctl = bld_fname_e1(casename_ctl, Varname)
-print('ind_ctl',ind_ctl)
-
-ind1 = '/e3sm_prod/phil/timeseries/e3sm-reshaped/20221014.v2.LR.WCYCLSSP245.E2_CNTL_01/20221014.v2.LR.WCYCLSSP245.E2_CNTL_01.eam.h0.2015-2046.TS.nc'
-#print('ind-xtl',ind1)
-
-ind2 = '/e3sm_prod/phil/timeseries/e3sm-reshaped/20230724.v2.LR.WCYCLSSP245.MCB-SSLT-EM.R1-3.test01/TS_201501_204412.nc'
-print('ind_xtb',ind2)
-
-casename_ptb='20230724.v2.LR.WCYCLSSP245.MCB-SSLT-EM.R1-3.test01'
-
-ind_ptb = bld_fname_e2(casename_ptb, Varname)
-print('ind_ptb',ind_ptb)
-
-DS1 = xr.open_mfdataset(ind_ptb)
-DS1 = center_time(DS1)
-DS1 = DS1.sel(time=slice("2020-01-01","2030-01-01"))
-Var1 = DS1[Varname]
-Var1y = tavg_mon_wt(Var1)
-V1 = Var1y.mean('time')
-Var1yga = V1.weighted(area).mean('ncol',keep_attrs=True)
-
-DS2 = xr.open_mfdataset(ind_ctl)
-DS2 = center_time(DS2)
-DS2 = DS2.sel(time=slice("2020-01-01","2030-01-01"))
-Var2 = DS2[Varname]
-Var2y = tavg_mon_wt(Var2)
-V2 = Var2y.mean('time')
-Var2yga = V2.weighted(area).mean('ncol',keep_attrs=True)
-
-DV = V1-V2
-```
-
-```python
-plotproj = ccrs.Mollweide()
-plotproj._threshold /= 100.
-fig, axes = plt.subplots(ncols=3
-                         ,gridspec_kw={'width_ratios': [1, 1, 1]}
-                         ,subplot_kw={'projection': plotproj}
-                         ,figsize=(16,5)
-                        )
-
-xr_cshplot(DV, lon, lat,ax=axes[1],ylabels=False)
 ```

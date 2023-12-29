@@ -1264,7 +1264,7 @@ def xr_getvar(Varname, DS, regtag=None,long_name=None):
             Var.attrs["long_name"] = long_name
         return Var
 
-def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None):
+def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None,cbar='default'):
     """xr_cshplot xarray cubed sphere horizontal plot
     """
 
@@ -1309,15 +1309,17 @@ def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=Non
     pl = ax.contourf(xv, yv, data_regridded, levels=clevs, # vmin=zmin, vmax=zmax,
                      norm=norm, cmap=cmap,
                      extend=extend, transform=ccrs.PlateCarree())
-    # Add colorbar to plot
-    cb = plt.colorbar(
-        pl, orientation='horizontal',ticks=clevs,ax=ax,
-        label='%s (%s)'%(xrVar.long_name, xrVar.units), pad=0.1
-    )
+    if cbar == 'default':
+        # Add colorbar to plot
+        cb = plt.colorbar(
+            pl, orientation='horizontal',ticks=clevs,ax=ax,
+            label='%s (%s)'%(xrVar.long_name, xrVar.units), pad=0.1
+        )
+        cb.ax.tick_params(labelsize=8)
+        
     if not title is None:
         ax.set_title(title)
         
-    cb.ax.tick_params(labelsize=8)
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
                       linewidth=2, color='gray', alpha=0.5)
     gl.left_labels=ylabels

@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.13.8
+      jupytext_version: 1.15.2
   kernelspec:
     display_name: pjrpy3
     language: python
@@ -27,7 +27,7 @@ indir = os.path.expanduser('~/NetCDF_Files/*F2010*.nc')
 #indir = os.path.expanduser('/lustre/choi040/20210920.F2010.1Nudg.ne30pg2_r05_oECv3/run/20210920.F2010.1Nudg.ne30pg2_r05_oECv3.eam.h2.2015-01-01-00000.nc')
 indir = os.path.expanduser('~/NetCDF_Files/F2010*01.nc')
 #indir = os.path.expanduser('~/NetCDF_Files/vd05_ANN_climo.nc')
-indir = os.path.expanduser('/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_e1/tests/M_1x1_nmonths/run/v2.LR.histAMIP_e1.eam.h4.2015-07-01-00000.nc')
+#indir = os.path.expanduser('/global/cscratch1/sd/pjr/E3SMv2/v2.LR.histAMIP_e1/tests/M_1x1_nmonths/run/v2.LR.histAMIP_e1.eam.h4.2015-07-01-00000.nc')
 print(indir)
 #print('exists',os.path.exists(indir))
 DS = xr.open_mfdataset(indir)#.chunk({'time': 20})
@@ -58,6 +58,11 @@ print('Var',Var)
 Varm2 = Var.weighted(weights).mean() # calculate global average
 #zavg = -7.1e3*np.log(Varm2.values/1000.)
 #print('area weighted mean', Varm2.values, zavg)
+```
+
+```python
+DS
+
 ```
 
 ```python
