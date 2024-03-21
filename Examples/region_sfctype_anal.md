@@ -7,9 +7,9 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.15.2
   kernelspec:
-    display_name: pjrpy3
+    display_name: Python [conda env:pjrpy3] *
     language: python
-    name: pjrpy3
+    name: conda-env-pjrpy3-py
 ---
 
 ```python
@@ -70,13 +70,16 @@ name, abbrev, reg = "SE_Atlantic", "SEA", np.array([[-25.,-30.],[15,-30.],[15,0.
 regList, nameList, abbrevList = regList + [reg], nameList + [name], abbrevList + [abbrev]
 
 o = 360.
-name, abbrev, reg = "Northern_Oceans", "NO", np.array([[-179.+o,60.],[179.+o,60.],[179.+o,80.],[-179.+o,80.]])
+name, abbrev, reg = "Northern_Oceans", "NO", np.array([[-179.9+o,60.],[179.9+o,60.],[179.+o,90.],[-179.9+o,90.]])
 regList, nameList, abbrevList = regList + [reg], nameList + [name], abbrevList + [abbrev]
 
 SDregions = regionmask.Regions(regList, names=nameList, abbrevs=abbrevList, name="SEED",overlap=True)
 SDregions
 
-ax = SDregions.plot(label="abbrev")
+projection = ccrs.Mollweide(central_longitude=-80)
+ax = SDregions.plot(label="abbrev",projection=projection)
+ax.set_global()
+ax.coastlines(linewidth=0.2,color='blue')
 varname = 'regions'
 plotfile = '%s.pdf'%varname
 plt.savefig(plotfile, bbox_inches='tight')
