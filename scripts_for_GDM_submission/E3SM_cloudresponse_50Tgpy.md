@@ -278,7 +278,7 @@ if True: # E3SM 50Tg/yr
     fstring2 ='%s%s%s' 
     pref2='E3SMcontrol'
 
-if True: # CESM 7.5 Tg/yr
+if False: # CESM 7.5 Tg/yr
     case_start1 = "/e3sm_prod/phil/climo/cesm/F2010climo.ss_NEP_SEP_SEA.1.5Tg/fv192x288/F2010climo.ss_NEP_SEP_SEA.1.5Tg.cam.h0."
     case_end1 = ".1-25.nc"
     pref1='CESM_7.5Tgpyr'
