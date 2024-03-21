@@ -1325,7 +1325,7 @@ def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=Non
     gl.left_labels=ylabels
     gl.right_labels=ylabels
     ax.coastlines(linewidth=1,color='blue')
-    return
+    return pl
 
 def xr_llhplot(xrVar, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None, cbartitle=None):
     """xr_llhplot xarray lat lon horizontal plot
