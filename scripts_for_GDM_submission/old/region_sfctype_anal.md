@@ -7,9 +7,9 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.15.2
   kernelspec:
-    display_name: Python [conda env:pjrpy3] *
+    display_name: Python 3 (ipykernel)
     language: python
-    name: conda-env-pjrpy3-py
+    name: python3
 ---
 
 ```python

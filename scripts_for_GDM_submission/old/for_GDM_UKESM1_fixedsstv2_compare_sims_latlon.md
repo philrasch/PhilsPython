@@ -13,7 +13,7 @@ jupyter:
     name: conda-env-.conda-pjrpy3-py
 ---
 
-**compare two cases over the globe assuming they are on lat/lon grid at same resolution**
+**Make panels for UKESM **
 
 *configured for the GMD paper
 Couple Simulations, 50 Tg/year, years 2041-2050*
