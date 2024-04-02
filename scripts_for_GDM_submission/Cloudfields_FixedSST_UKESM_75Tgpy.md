@@ -317,6 +317,15 @@ def pltfld(DV, titled, fname=None):
 ```
 
 ```python
+# open a file that will hold all the filenames used by the program
+flname = '/tmp/flname'
+file = open(flname, 'w')
+file.write('list of files used by Cloudfields_xxx\n')
+file.close()
+file = open(flname, 'a')
+```
+
+```python
 pref_fn = 'UKESM'
 
 def make_ind1 (REG_ID, Varname, filetype=None):
@@ -324,7 +333,6 @@ def make_ind1 (REG_ID, Varname, filetype=None):
     case_start1 = '~/NetCDF_Files/UKESM1_data_v2/Coupled_50Tg/'+REG_ID+'_coupled_50Tgy_20410101_20500101_mean_'
     case_end1 = ".nc"
     fstring1 ='%s%s%s' 
-    pref1=REG_ID+'_UKESM1_50Tgpy_Cpld'
     
     if filetype == 'Fixed_SST':
         # fixed SST simulations
@@ -336,26 +344,26 @@ def make_ind1 (REG_ID, Varname, filetype=None):
         #pref1=REG_ID+'_50Tgpy_FixedSST'
         case_end1 = ".nc"
         fstring1 ='%s%s%s' 
-        pref1=REG_ID+'_UKESM1_25Tgpy_Cpld'
 
     ind1 = fstring1 % (case_start1,Varname,case_end1)
+    file.write(ind1+'\n')
     return ind1
 
 def make_ind2(REG_ID, Varname, filetype='Fixed_SST'):    
     case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_20450101_20490101_mean_'
     case_start2 = '~/NetCDF_Files/UKESM1_data_v2/Coupled_Control/CTL_coupled_20410101_20500101_mean_'
     case_end2 = ".nc"
-    pref2='UKESM1_control'
     fstring2 ='%s%s%s' 
 
     if filetype == 'Fixed_SST':
         case_start2 = '~/NetCDF_Files/UKESM1_data/CTL_AtmosOnly_19840101_19880101_mean_'
         case_start2 = '~/NetCDF_Files/UKESM1_data_v2/AtmosOnly_Control_1979-1989/'+'CTL_AtmosOnly_19790101_19890101_mean_'
         case_end2 = ".nc"
-        pref2='Control'
         fstring2 ='%s%s%s' 
         
     ind2 = fstring2 % (case_start2,Varname,case_end2)
+    file.write(ind2+'\n')
+
     return ind2
 
 
@@ -481,4 +489,8 @@ else:
     fname = pref_fn+'_'+Varname+'_'+'SWCRE'+'-D.pdf'
     pltfld(DSWCRE, difftitle+sDSWCREA,fname)
 
+```
+
+```python
+file.close()
 ```

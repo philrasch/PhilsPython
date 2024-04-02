@@ -32,6 +32,15 @@ import cartopy.crs as ccrs
 ```
 
 ```python
+# open a file that will hold all the filenames used by the program
+flname = '/tmp/flname'
+file = open(flname, 'w')
+file.write('list of files used by gavg_xxx\n')
+file.close()
+file = open(flname, 'a')
+```
+
+```python
 fnprefix='GAVG_tsers_E3SM_and_CESM'
 ```
 
@@ -47,6 +56,7 @@ def make_GA_tser(Varname, filespec, dirname, casename, extname):
     '''
     ind1 = filespec.format(dir=dirname,case=casename,ext=extname,var=Varname)
     print('opening',ind1)
+    file.write(ind1+'\n')
     DS1 = xr.open_mfdataset(ind1)
     DS1 = center_time(DS1)
     month_length = DS1.time.dt.days_in_month
@@ -140,6 +150,7 @@ tit4 = "CESM CDNC600, NEP,SEP,SEA"
 string4 = "{dir:s}/{case:s}{ext:s}{var:s}.nc"
 ind = string4.format(dir=dir4,case=case4,ext=ext4,var="TS")
 #print('ind is ',ind)
+file.write(ind+'\n')
 DS = xr.open_mfdataset(ind)
 #print(DS)
 #1./0.
@@ -173,6 +184,7 @@ string8 = "{dir:s}/{case:s}/{case:s}{ext:s}.{var:s}"+ext8f
 
 filespec=string8.format(dir=dir8,case=case8,ext=ext8,var='TS')
 print(filespec)
+file.write(filespec+'\n')
 ind = xr.open_mfdataset(filespec)
 
 Varlist = np.array(['RESTOM','FLNT','FSNT','TS','TMQ','PRECT','AEROD_v','CLDLOW','CLDTOT','LWCF','SWCF','TGCLDIWP','TGCLDLWP',
@@ -276,4 +288,8 @@ for Varname in Varlist:
     plt.show()
     
     print('field processing complete')
+```
+
+```python
+file.close()
 ```

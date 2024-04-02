@@ -32,6 +32,15 @@ import cartopy.crs as ccrs
 ```
 
 ```python
+# open a file that will hold all the filenames used by the program
+flname = '/tmp/flname'
+file = open(flname, 'w')
+file.write('list of files used by Cloudfields_xxx\n')
+file.close()
+file = open(flname, 'a')
+```
+
+```python
 def setfig3b1x1 ():
     """
     return fig and axes for a single panel figure
@@ -214,7 +223,7 @@ yreg = np.array([[0.,30.],     [-30.,0.], [-30.,0.], [30.,50.],   [-50.,-30.] ])
 namereg = ['NEP','SEP','SEA','NP','SP']
 
     
-if False: # E3SM 50Tg/yr
+if True: # E3SM 50Tg/yr
     case_start1 = "/e3sm_prod/phil/climo/e3sm/20230426.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01/20230426.v2.LR.F2010.MCB-SSLT-EM.R1-3.test01_ANN_000101_001112_climo_fv192x288.nc"
     case_end1 = ""
     pref1='E3SM_50Tgpy'
@@ -227,7 +236,7 @@ if False: # E3SM 50Tg/yr
     fstring2 ='%s%s%s' 
     pref2='E3SMcontrol'
 
-if True: # CESM 7.5 Tg/yr
+if False: # CESM 7.5 Tg/yr
     case_start1 = "/e3sm_prod/phil/climo/cesm/F2010climo.ss_NEP_SEP_SEA.1.5Tg/fv192x288/F2010climo.ss_NEP_SEP_SEA.1.5Tg.cam.h0."
     case_end1 = ".1-25.nc"
     pref1='CESM_7.5Tgpyr'
@@ -245,7 +254,8 @@ for Varname in Varlist:
     print()
     print('-------------------------------'+Varname)    
     ind1 = fstring1 % (case_start1,Varname,case_end1)
-    print('opening',ind1)
+    file.write(ind1+'\n')
+    print('opening ind1 ',ind1)
     DS1 = xr.open_mfdataset(ind1)
     #print('xxx',DS1.time)
     DS1 = center_time(DS1)
@@ -253,6 +263,7 @@ for Varname in Varlist:
     V1 = Var1.mean(dim='time',keep_attrs=True)
 
     ind2 = fstring2 % (case_start2,Varname,case_end2)
+    file.write(ind2+'\n')
     print('opening ind2',ind2)
     #DS2 = xr.open_mfdataset(ind2)
     DS2 = xr.open_mfdataset(ind2)
@@ -374,5 +385,7 @@ for Varname in Varlist:
 
         
     print('field processing complete')
+
+file.close()
 
 ```

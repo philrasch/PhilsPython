@@ -36,6 +36,15 @@ from datetime import datetime, timedelta
 ```
 
 ```python
+# open a file that will hold all the filenames used by the program
+flname = '/tmp/flname'
+file = open(flname, 'w')
+file.write('list of files used by Compare_xxx\n')
+file.close()
+file = open(flname, 'a')
+```
+
+```python
 def make_AA_tser(Var):
     ''' make Annual Average from tseries files
         Var: Xarray object
@@ -67,8 +76,10 @@ def get_cesm_diff(casename, Varname):
 
     ind0 = bld_fname3(casename0, Varname)
     print('ind0',ind0)
+    file.write(ind0+'\n')
     DS0 = center_time(xr.open_mfdataset(ind0))
     ind1 = bld_fname2(casename, Varname)
+    file.write(ind1+'\n')
     print('ind1',ind1)
     DS1 = center_time(xr.open_mfdataset(ind1))
     DS0, DS1 = reconcile_xr_coords(DS0, DS1)
@@ -158,6 +169,7 @@ for Varname in Varlist:
 def create_E3SM_var (Varname,ptbname):
     
     ne30area = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
+    file.write(ne30area+'\n')
     DSA = xr.open_mfdataset(ne30area)
     lon = xr_getvar('lon',DSA)
     lat = xr_getvar('lat',DSA)
@@ -185,6 +197,7 @@ def create_E3SM_var (Varname,ptbname):
     casename_ptb=ptbname
     ind_ptb = bld_fname_e2(casename_ptb, Varname)
     print("ind_ptb",ind_ptb)
+    file.write(ind_ptb+'\n')
     DS1 = xr.open_mfdataset(ind_ptb)
     DS1 = center_time(DS1)
     DS1 = DS1.sel(time=slice("2020-01-01","2030-01-01"))
@@ -194,6 +207,7 @@ def create_E3SM_var (Varname,ptbname):
     Var1yga = V1.weighted(area).mean('ncol',keep_attrs=True)
 
     DS2 = xr.open_mfdataset(ind_ctl)
+    file.write(ind_ctl+'\n')
     DS2 = center_time(DS2)
     DS2 = DS2.sel(time=slice("2020-01-01","2030-01-01"))
     Var2 = xr_getvar(Varname, DS2)
@@ -488,6 +502,7 @@ def makesyn(Varname):
         #ind1 = fstring1 % (case_start1,Varname,case_end1)
         ind1 = make_ind1(REG_ID,Varname,filetype)
         print('ind1 opening',ind1)
+        file.write(ind1+'\n')
         DS1 = xr.open_mfdataset(ind1)
         #print('xxx',DS1.time_bnds.values)
         DS1 = fix_UKMO_ds(ind1, DS1)
@@ -498,6 +513,7 @@ def makesyn(Varname):
         V1 = xr_getvar_sl(VN,DS1,method='maxb850')
         #print('V1',V1)
         ind2 = make_ind2(REG_ID,Varname,filetype)
+        file.write(ind2+'\n')
         print('opening ind2',ind2)
         #DS2 = xr.open_mfdataset(ind2)
         DS2 = xr.open_mfdataset(ind2)
@@ -558,6 +574,7 @@ def getd1245_50Tg(Varname):
         #print('vnukesm',vnukesm)
         pathctl = '~/NetCDF_Files/UKESM1_data_v2/Coupled_SSP585/'+vnukesm+'_Amon_UKESM1-0-LL_ssp585_r1i1p1f2_gn_205001-210012.nc'
         #print('pathctl',pathctl)
+        file.write(pathctl+'\n')
         DS2 = xr.open_mfdataset(pathctl)
         #print('DS2a',DS2)
         DS2 = fix_UKMO_ds(pathctl, DS2)
@@ -582,6 +599,7 @@ def getd1245_50Tg(Varname):
         dec7 = '20710101_20810101'
         pathpert7 = '~/NetCDF_Files/UKESM1_data_v2/G6MCB/G6MCB_r1_'+dec7+'_mean_'+Varname+'.nc'
         #print('pathpert7',pathpert7)
+        file.write(pathpert7+'\n')
         DS1 = xr.open_mfdataset(pathpert7)
         #print('DS1a',DS1)
         DS1 = fix_UKMO_ds(pathpert7, DS1)
@@ -592,6 +610,7 @@ def getd1245_50Tg(Varname):
         dec8 = '20810101_20910101'
         pathpert8 = '~/NetCDF_Files/UKESM1_data_v2/G6MCB/G6MCB_r1_'+dec8+'_mean_'+Varname+'.nc'
         #print('pathpert8',pathpert8)
+        file.write(pathpert8+'\n')
         DS1x = xr.open_mfdataset(pathpert8)
         #print('DS1xa',DS1)
         DS1x = fix_UKMO_ds(pathpert8, DS1x)
@@ -883,4 +902,8 @@ pcmap = plt.get_cmap('BrBG')
 plotall (D1245_UKESM_Pr, DS1245_UKESM_Pr, D1245_E3SM_Pr, DS1245_E3SM_Pr, D1245_CESM_Pr, DS1245_CESM_Pr,dmap=pcmap)
 #
 plotall (D1245_UKESM_TS, DS1245_UKESM_TS, D1245_E3SM_TS, DS1245_E3SM_TS, D1245_CESM_TS, DS1245_CESM_TS,dmap=tcmap)
+```
+
+```python
+file.close()
 ```
