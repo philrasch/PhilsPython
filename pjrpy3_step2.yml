@@ -22,4 +22,7 @@ dependencies:
   - ipynbname
   - ipython
   - pypdf
+  - fsspec
+  - s3fs
+  - zarr
   
