@@ -1,0 +1,25 @@
+name: pjrpy3
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - nb_conda_kernels
+  - python=3.9
+  - dask
+  - netcdf4
+  - cartopy
+  - xarray
+  - matplotlib
+  - bottleneck
+  - pynco
+  - jupyterlab
+  - cdo
+  - statsmodels
+  - xhistogram
+  - ncview
+  - nodejs
+  - regionmask
+  - pygeos
+  - jupytext
+  - nc-time-axis
+prefix: /home/phil/miniconda3/envs/pjrpy3

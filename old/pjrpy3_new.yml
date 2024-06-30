@@ -1,0 +1,21 @@
+name: pjrpy3
+channels:
+  - defaults
+dependencies:
+  - python
+  - dask
+  - netcdf4
+  - cartopy
+  - xarray
+  - matplotlib
+  - pynco
+  - bottleneck
+  - jupyterlab
+  - cdo
+  - xhistogram
+  - statsmodels
+  - ncview
+  - nodejs
+  - nb_conda_kernels
+  - cmocean
+prefix: /home/phil/miniconda3/envs/pjrpy3
