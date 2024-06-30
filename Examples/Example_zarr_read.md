@@ -5,11 +5,11 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.15.2
+      jupytext_version: 1.16.2
   kernelspec:
-    display_name: Python [conda env:pjrpy3] *
+    display_name: pjrpy3
     language: python
-    name: conda-env-pjrpy3-py
+    name: pjrpy3
 ---
 
 ```python
@@ -25,4 +25,14 @@ s3_path = f's3://mcb-zarr/CESM2/{experiment}/atm/proc/tseries/month_1/{experimen
 
 ## data is a lazy-loaded xarray dataset
 data = s3load_zarr(s3_path)
+```
+
+```python
+time = data.time
+lat = data.lat
+print(data.TREFHT)
+```
+
+```python
+
 ```

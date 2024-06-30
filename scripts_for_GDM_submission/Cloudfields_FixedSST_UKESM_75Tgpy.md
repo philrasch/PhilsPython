@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.15.2
+      jupytext_version: 1.16.2
   kernelspec:
     display_name: Python [conda env:.conda-pjrpy3] *
     language: python
@@ -28,7 +28,7 @@ xr.set_options(keep_attrs=True)
 import cartopy.crs as ccrs
 
 # load some useful functions written or acquired by phil rasch
-%run -i ./pjrlib
+%run -i ./pjrlib_v2
 ```
 
 ```python

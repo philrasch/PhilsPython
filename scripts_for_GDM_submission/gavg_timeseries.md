@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.15.2
+      jupytext_version: 1.16.2
   kernelspec:
     display_name: pjrpy3
     language: python
@@ -72,7 +72,8 @@ def make_GA_tser(Varname, filespec, dirname, casename, extname):
     else: 
         if 'ncol' in DS1.dims:
             print ('get CS data')
-            areafile = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
+            #areafile = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
+            areafile = '~/NetCDF_Files/ne30pg2.nc'
             DSA = xr.open_mfdataset(areafile)
             if len(DSA['ncol']) != len(DS1['ncol']):
                 raise ValueError('area file mismatch')

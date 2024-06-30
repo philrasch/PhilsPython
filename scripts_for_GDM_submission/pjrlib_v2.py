@@ -1333,8 +1333,50 @@ def xr_getvar(Varname, DS, regtag=None,long_name=None):
             Var.attrs['units'] = 'W m$^{-2}$'
         if Var.attrs['units'] == 'g/m2':
             Var.attrs['units'] = 'g m$^{-2}$'
-        print ('zzz',Var.attrs['units'])
+        #print ('zzz',Var.attrs['units'])
         return Var
+
+def xr_getvar_sl(VN, DS1, method='surface', verbose=False):
+    """ get a field from a netCDF file.
+    If it is a multi-level field, do something useful to provide single level information
+    currently all it can do is return the surface value, or the max value of field below 850hPa
+    
+    This function assumes that the x-coordinate increases monotonically
+
+    """
+    Var1 = xr_getvar(VN,DS1)
+    dimlist = Var1.dims
+    if 'model_level_number' in dimlist:
+        level_height = xr_getvar('level_height',DS1)
+        sigma = xr_getvar('sigma',DS1)
+        surface_altitude = xr_getvar('surface_altitude',DS1)
+        altitude = level_height + (sigma * surface_altitude)
+        altitude.attrs['long_name'] = 'altitude above mean sea-level'
+        if method == 'surface':
+            print('method:surface')
+            V1 = Var1.isel(model_level_number=0)
+            V1.attrs['long_name'] = V1.attrs['long_name'] + ' (surface level)'
+        elif method == 'maxb850':
+            dz1 = altitude - surface_altitude   # height above surface
+            dz2 = (sigma - 1)*surface_altitude + level_height  # height above sea level
+            # assume pressure has a 8.4km scale height, find the altitude of 850 hPa
+            pmb = 850.
+            psmb = 1000.
+            scaleheight = 8.4e3
+            altmb = -np.log(pmb/psmb)*scaleheight
+            # find the max value of field below this altitude
+            V1 = Var1.copy()
+            V2 = V1.where(altitude <= altmb+50.)
+            V3 = V2.max(dim='model_level_number')
+            V3.attrs['long_name'] = 'max value below 850hPa of '+V2.name
+            V1 = V3
+    else:
+        V1 = Var1
+    
+    if V1.attrs['units'] == 'mm/day':
+          V1.attrs['units'] = 'mm/d'
+          
+    return V1
 
 def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None,cbar='default'):
     """xr_cshplot xarray cubed sphere horizontal plot

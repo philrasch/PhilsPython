@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.15.2
+      jupytext_version: 1.16.2
   kernelspec:
     display_name: pjrpy3
     language: python
@@ -168,7 +168,8 @@ for Varname in Varlist:
 ```python
 def create_E3SM_var (Varname,ptbname):
     
-    ne30area = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
+    #ne30area = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
+    ne30area = '~/NetCDF_Files/ne30pg2.nc'
     file.write(ne30area+'\n')
     DSA = xr.open_mfdataset(ne30area)
     lon = xr_getvar('lon',DSA)
@@ -586,7 +587,7 @@ def getd1245_50Tg(Varname):
         Var2 = DS2[vnukesm]
         if vnukesm == 'pr':
             Var2 = Var2*8.64e4
-            Var2.attrs['units'] = 'mm/day'
+            Var2.attrs['units'] = 'mm day$^{-1}$'
         #print('Var2',Var2)
         Var2y = tavg_mon_wt(Var2)
         #print('Var2y',Var2y)
@@ -739,10 +740,14 @@ def xr_llhplot2 (xrVar, cbar='default', plotproj=None, ax=None, cax=None,
             ## Adjust the positioning and orientation of the colorbar
             #ax.set_position([posn.x0, posn.y0-0.06, posn.width, 0.04])
             cax.set_position([posn.x0, posn.y0-0.02, posn.width, 0.015])
-    
+        
+        units = xrVar.units
+        if units == 'mm/day':
+            units = 'mm day$^{-1}$'
+            
         cb = plt.colorbar(
              pl, orientation='horizontal',ticks=clevs,cax=cax,
-             label='%s (%s)'%(cbartitle, xrVar.units)
+             label='%s (%s)'%(cbartitle, units)
              )
         cb.ax.tick_params(labelsize=7)
     
@@ -889,7 +894,11 @@ def plotall (DUKESM, DSUKESM, DE3SM, DSE3SM, DCESM, DSCESM,dmap=None):
          #label='%s (%s)'%(cbartitle, xrVar.units)
          )
     cb.ax.tick_params(labelsize=7)
-    cax.text(0.,-2.6,'%s (%s)'%(DCESM.long_name, DCESM.units),va='center',ha='center')
+    units = DCESM.units
+    if units == 'mm/day':
+        units = 'mm day$^{-1}$'
+        
+    cax.text(0.,-2.6,'%s (%s)'%(DCESM.long_name, units),va='center',ha='center')
     plt.savefig('CS_compare_'+DCESM.name+'.pdf',format='pdf',dpi=300,transparent=True)#,facecolor='xkcd:mint green')
     plt.show()
 
