@@ -814,7 +814,7 @@ def plotall (DUKESM, DSUKESM, DE3SM, DSE3SM, DCESM, DSCESM,dmap=None):
     ax2.set_axis_off()
     ax2.set_xlim([0,1])
     ax2.set_ylim([0,1])
-    ax2.text(0.5,1.1,'UKESM ['+sCCU+']',fontsize=10,va='center',ha='center')
+    ax2.text(0.5,1.1,'UKESM1 ['+sCCU+']',fontsize=10,va='center',ha='center')
     #pltllbox2([-150.,-110.],[0.,30.],ax=axf[4])
     #pltllbox2([-110.,-70.],[-30.,0.],ax=axf[4])
     #pltllbox2([-25.,15.],[-30.,0.],ax=axf[4])
@@ -845,7 +845,7 @@ def plotall (DUKESM, DSUKESM, DE3SM, DSE3SM, DCESM, DSCESM,dmap=None):
     ax2.set_xlim([0,1])
     ax2.set_ylim([0,1])
     ax2.text(0.01,0.93,sDSE3SM,fontsize=6)
-    ax2.text(0.5,1.1,'E3SM ['+sCCE+']',fontsize=10,va='center',ha='center')
+    ax2.text(0.5,1.1,'E3SMv2 ['+sCCE+']',fontsize=10,va='center',ha='center')
     ax2.text(-0.05,0.5,'Synthetic',fontsize=10,rotation='vertical', va='center',ha='center')
 
     
@@ -878,7 +878,7 @@ def plotall (DUKESM, DSUKESM, DE3SM, DSE3SM, DCESM, DSCESM,dmap=None):
     ax2.set_axis_off()
     ax2.set_xlim([0,1])
     ax2.set_ylim([0,1])
-    ax2.text(0.5,1.1,'CESM ['+sCCC+']',fontsize=10,va='center',ha='center')
+    ax2.text(0.5,1.1,'CESM2 ['+sCCC+']',fontsize=10,va='center',ha='center')
     ## Find the location of the main plot axes
     ## has to be done after some plotting is done in projection space
     posn = axf[4].get_position()
