@@ -1333,7 +1333,7 @@ def xr_getvar(Varname, DS, regtag=None,long_name=None):
             Var.attrs['units'] = 'W m$^{-2}$'
         if Var.attrs['units'] == 'g/m2':
             Var.attrs['units'] = 'g m$^{-2}$'
-        print ('zzz',Var.attrs['units'])
+        # print ('zzz',Var.attrs['units'])
         return Var
 
 def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None,cbar='default'):
