@@ -1,0 +1,40 @@
+# to install use these commands
+#conda env create -n pjrpy3 --file pjrpy3_step1.yml
+#conda activate pjrpy3
+#mamba env update --file pjrpy3_step2.yml
+#
+#name: pjrpy3
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - proj
+  - ca-certificates
+  - certifi
+  - openssl
+  - pyproj
+  - python
+  - mamba
+  - dask
+  - xarray
+  - conda-forge::netcdf4
+  - matplotlib
+  - bottleneck
+  - nb_conda_kernels
+  - jupyterlab
+  - jupytext
+  - nodejs
+  - regionmask
+  - nc-time-axis
+  - pygeos
+  - cartopy
+  - nco
+  - pynco
+  - pipx
+  - ipynbname
+  - ipython
+  - pypdf
+  - fsspec
+  - s3fs
+  - zarr
+  
