@@ -1,4 +1,7 @@
 # module of phils useful stuff
+
+pjrpy3_VERSION = 12282024
+
 """Phils useful functions"""
 
 import matplotlib.pyplot as plt
@@ -1939,5 +1942,54 @@ def make_AA_tser(Var):
     V1AY = V1AY.rename(Var.name)
     return V1AY
 
-print ("pjr3.py xxx complete")
+def fix_area(DS1):
+    """fix_area(DS1)                                                                                                  
+                                                                                                                         
+    add an area variable to DS1 if absent  
+    only works on E3SM grids for ne30pg2 grid
+                                                                                                                         
+    """
+    DS = DS1.copy()
+# check for area variable. If it is missing add it (differs for E3SM and CESM grids)
+    if 'area' not in DS1:
+        if 'ncol' in DS1.dims:
+            #print ('get CS data')
+            #areafile = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
+            areafile = '~jupyter-adminphil/NetCDF_Files/ne30pg2.nc'
+            DSA = xr.open_mfdataset(areafile)
+            if len(DSA['ncol']) != len(DS1['ncol']):
+                raise ValueError('area file mismatch')
+            area = DSA.area
+            #lon = DSA.lon
+            #lat = DSA.lat
+        else:
+            #print('calculating fv area weights')
+            lat = DS1['lat'].values
+            lon = DS1['lon'].values
+            aread = make_fvarea(lon,lat)
+            area = xr.DataArray(aread, dims=['lat','lon'], coords={'lon':lon,'lat':lat})
+            area.attrs['units']='steradians'
+        DS['area'] = area
+        #DS['lon'] = lon
+        #DS['lat'] = lat
+
+    #print('area',area)
+
+    #print('Var1',Var1)
+    #1./0.
+    return DS
+
+def fix_DS(DS):
+    """fix_DS(DS)                                                                                                  
+    center the time coordinate within the averaging interval                                                                                                                     
+    add an area variable to DS if absent                                      
+                                                                                                                         
+    """
+    DS = fix_area(DS)
+    #print('after area ', DS)
+    DS = center_time(DS)
+    #print('after time ', DS)
+    return DS
+
+print ("pjr3.py complete",pjrpy3_VERSION)
 
