@@ -1,8 +1,16 @@
 # module of phils useful stuff
 
-pjrpy3_VERSION = 12282024
+pjrpy3_VERSION = '02082025'
 
 """Phils useful functions"""
+
+import os
+import pwd
+import sys
+import glob
+import pyproj
+
+os.environ['PROJ_LIB']=pyproj.datadir.get_data_dir()
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -18,6 +26,7 @@ import os
 import pwd
 import sys
 import glob
+import pyproj
 from pypdf import PdfReader, PdfWriter
 #import cdms2
 #import cdutil
@@ -34,6 +43,8 @@ import matplotlib.colors as mcolors
 import warnings
 
 from pandas.plotting import register_matplotlib_converters
+
+
 register_matplotlib_converters()
 
 xr.set_options(keep_attrs=True)
@@ -1287,6 +1298,11 @@ def xr_getvar(Varname, DS, regtag=None,long_name=None):
         elif Varname == 'SWCF':
             Var = DS['SWCF'+regtag]
             Var.attrs['long_name'] = 'SW Cloud Radiative Effect'
+        elif Varname == "TGCLDIWP":
+            Var = DS['TGCLDIWP'+regtag]
+            Var = Var*1.e3
+            Var.attrs['units'] = 'g/m2'            
+            Var.attrs["long_name"] = 'grid-avg IWP.'
         elif Varname == "TGCLDLWP":
             Var = DS['TGCLDLWP'+regtag]
             Var = Var*1.e3
@@ -1339,13 +1355,20 @@ def xr_getvar(Varname, DS, regtag=None,long_name=None):
         # print ('zzz',Var.attrs['units'])
         return Var
 
-def xr_cshplot(xrVar, xrLon, xrLat, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None,cbar='default'):
+def xr_cshplot(xrVar, xrLon, xrLat, dinc=None, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None,cbar='default'):
     """xr_cshplot xarray cubed sphere horizontal plot
     """
 
-    dinc = 1.  # increment of mesh in degrees
-    lon_h=np.arange(np.floor(xrLon.min().values),np.ceil(xrLon.max().values+dinc), dinc)
-    lat_h=np.arange(np.floor(xrLat.min().values),np.ceil(xrLat.max().values+dinc), dinc)
+    if dinc is None: dinc = 1.  # increment of mesh in degrees
+    #lon_h=np.arange(np.floor(xrLon.min().values),np.ceil(xrLon.max().values+dinc), dinc)
+    #lat_h=np.arange(np.floor(xrLat.min().values),np.ceil(xrLat.max().values+dinc), dinc)
+    lon_h = np.arange(0.,360+dinc,dinc)
+    #lat_h = np.arange(-90.,90+dinc,dinc)
+    latn = np.floor((180.+dinc)/dinc).astype(int)
+    dincns = 180./latn
+    lat_h = np.linspace(-90.,90.,latn)
+    #print('lon',lon_h)
+    #print('lat',lat_h)
     xv,yv=np.meshgrid(lon_h,lat_h)
     data_regridded = interp_ap(xv, yv, xrVar.values,xrLat.values,xrLon.values)
     df = data_regridded.flatten()
