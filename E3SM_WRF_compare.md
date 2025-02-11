@@ -22,17 +22,18 @@ print(sys.version)
 ```python
 def findNiceContlog(cmax,ndec=2):
     """ find a reasonable set of contours spaced logarithmically"""
-    decade = int(np.log10(clevs[-1])+1)
+    decade = int(np.log10(cmax)+1)
     mylist = []
     for i in range(decade-ndec,decade):
         cdec = np.array([1.,2.,5.])*10.**i
         mylist.extend(cdec)
     ind = np.array(np.where(mylist > np.abs(cmax)))
+    #print('cut1',mylist)
     #print('ind',ind,ind[0],len(ind[0]))
-    if len(ind[0]) == 1: 
-        ind = ind.item()
+    if len(ind[0]) > 0: 
+        ind = ind[0][0].item()
         mylist = mylist[0:ind]
-    #print('indf',ind)
+    #print('cut2',mylist)
 
     #if mylist[-1] > np.abs(cmax):
     #   mylist = mylist[0:-2] 
@@ -130,79 +131,6 @@ Var2.plot()
 ```
 
 ```python
-def xr_pshplot(xrVar, xrLon, xrLat, dinc=None, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None,cbar='default'):
-    """xr_pshplot xarray WRF polar stereohorizontal plot
-    """
-
-    if dinc is None: dinc = 1.  # increment of mesh in degrees
-    #lon_h=np.arange(np.floor(xrLon.min().values),np.ceil(xrLon.max().values+dinc), dinc)
-    #lat_h=np.arange(np.floor(xrLat.min().values),np.ceil(xrLat.max().values+dinc), dinc)
-    lon_h = np.arange(0.,360+dinc,dinc)-180.
-    #lat_h = np.arange(-90.,90+dinc,dinc)
-    latn = np.floor((180.+dinc)/dinc).astype(int)
-    dincns = 180./latn
-    lat_h = np.linspace(-90.,90.,latn)
-    #print('lon_h',lon_h)
-    #print('lat_h',lat_h)
-    xv,yv=np.meshgrid(lon_h,lat_h)
-    xrvf = xrVar.values.flatten()
-    xrlat = xrLat.values.flatten()
-    xrlon = xrLon.values.flatten()
-    #for i in range(0, 11):
-        #print(i,xrvf[i],xrlat[i],xrlon[i])
-    data_regridded = interp_ap(xv, yv, xrvf, xrlat, xrlon)
-    #inds = np.where(yv < 60.)
-    #data_regridded[inds] = np.nan
-    #print('data_regridded',data_regridded.shape)
-    df = data_regridded.flatten()
-    dsub = df[np.isfinite(df)] # ignore NaN
-    zmax = dsub.max()
-    zmin = dsub.min()
-    #print('masked interpolated range',zmin,zmax)
-    dataproj=ccrs.PlateCarree()    # data is always assumed to be lat/lon
-    #plotproj=ccrs.Orthographic(central_latitude=0,central_longitude=55)   # any projections should work
-    #print('plotproj is ',plotproj)
-    if plotproj is None: plotproj = ccrs.Mercator
-    if ax is None: ax = plt.gca()
-    if cax is None: cax = ax
-    if ylabels is None: ylabels = True
-    if clevs is None:
-        clevs = findNiceContours(np.array([zmin,zmax]),nlevs=10)
-    #print('clevs',clevs)
-    if cmap is None:
-        #print('aaa, grabbing cmap default')
-        #cmap = mpl.cm.get_cmap()
-        cmap = plt.get_cmap()
-        #print('bbb',cmap.N)
-    #print('cmap',cmap)
-    extend = 'both'
-    norm = mpl.colors.BoundaryNorm(clevs,cmap.N,extend=extend)
-    #print('norm',norm(clevs))
-
-    pl = ax.contourf(xv, yv, data_regridded, levels=clevs, # vmin=zmin, vmax=zmax,
-                     norm=norm, cmap=cmap,
-                     extend=extend, transform=ccrs.PlateCarree())
-    if cbar == 'default':
-        # Add colorbar to plot
-        cb = plt.colorbar(
-            pl, orientation='horizontal',ticks=clevs,ax=ax,
-            label='%s (%s)'%(xrVar.long_name, xrVar.units), pad=0.1
-        )
-        cb.ax.tick_params(labelsize=8)
-        
-    if not title is None:
-        ax.set_title(title)
-        
-    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
-                      linewidth=2, color='gray', alpha=0.5)
-    gl.left_labels=ylabels
-    gl.right_labels=ylabels
-    ax.coastlines(linewidth=1,color='blue')
-    return pl
-
-```
-
-```python
 def xr_intum2ll(xrVar, lon_o, lat_o, xrLon=None, xrLat=None):
     """xr_intum2ll: interpolate xarray data on unstructured mesh to lat/lon
     """
@@ -236,8 +164,19 @@ def xr_intum2ll(xrVar, lon_o, lat_o, xrLon=None, xrLat=None):
 ```
 
 ```python
+def fixWRF(Var):
+    if Var.name == 'LWP':
+        Var = Var*1000.
+        Var.attrs['units'] = 'g m-2'
+    if Var.name == 'IWP':
+        Var = Var*1000.
+        Var.attrs['units'] = 'g m-2'
+    return Var
+    
 xrlon = xr_getvar('lon',DS1).isel(time=0)
 xrlat = xr_getvar('lat',DS1).isel(time=0)
+
+dmap = diverge_map()
 
 if dinc is None: dinc = 1.  # increment of mesh in degrees
 #dinc = 1.
@@ -246,11 +185,18 @@ latn = np.floor((180.+dinc)/dinc).astype(int)
 dincns = 180./latn
 lat_o = np.linspace(-90.,90.,latn)
 
-WRFnmdict = {'PS':'ps','TS':'ts','TGCLDLWP':'xxx'}
-Varlist = np.array(['TS'])
+WRFnmdict = {'PS':'ps','TS':'ts','TGCLDLWP':'LWP',
+             'TGCLDIWP':'IWP',
+#             'FLDS':'rlds','FLUS':'rlus',
+             'FLDS':'LW_d','FLUS':'LW_u',
+             'LHFLX':'LH','SHFLX':'SH'}
+Varlist = np.array(['PS','TS','TGCLDLWP','TGCLDIWP','FLDS','FLUS','LHFLX','SHFLX'])
+# Varlist = np.array(['TGCLDIWP'])
+
 for Varname in Varlist:
     # E3SM
-    Var1 = get_NHDJF(Varname,DS1)    
+    Var1 = get_NHDJF(Varname,DS1)
+    print('range of Var1',Var1.min().values, Var1.max().values)
     Var1ll = xr_intum2ll(Var1, lon_o, lat_o, xrLon=xrlon,xrLat=xrlat)
     fig, axes = plt.subplots(ncols=3,
                              gridspec_kw={'width_ratios': [1,1,1]},
@@ -263,7 +209,6 @@ for Varname in Varlist:
     fig.set_dpi(300.0)
     #ax = axes[0]
     axes[0].set_extent([-180.,180., 60., 90], ccrs.PlateCarree())
-    xr_llhplot(Var1ll,ax=axes[0])
 
     # WRF
     WRFname = WRFnmdict.get(Varname) 
@@ -273,19 +218,55 @@ for Varname in Varlist:
     DS2 = xr.open_mfdataset(ind2)
     time = DS2.time
     Var2 = DS2[WRFname].squeeze()
+    Var2 = fixWRF(Var2)
     Var2 = Var2.where(Var2.lat > 60.)
+    print('range of Var2', Var2.min().values, Var2.max().values)
     Var2ll = xr_intum2ll(Var2, lon_o, lat_o)
     axes[1].set_extent([-180.,180., 60., 90], ccrs.PlateCarree())
-    xr_llhplot(Var2ll,ax=axes[1])
+
+    zmin = np.min([Var1.min().values,Var2.min().values])
+    zmax = np.max([Var1.max().values,Var2.max().values])
+    clevs = findNiceContours(np.array([zmin,zmax]),nlevs=12)
+    print('clevs',clevs)
+
+    xr_llhplot(Var1ll,ax=axes[0],clevs=clevs,cax=False,title='E3SM')
+    pl = xr_llhplot(Var2ll,ax=axes[1],clevs=clevs,cax=False,title='RASM')
 
     # Difference variable
     DV = Var1ll - Var2ll
     axes[2].set_extent([-180.,180., 60., 90], ccrs.PlateCarree())
     zmin = DV.min().values
     zmax = DV.max().values
-    clevs = findNiceContours(np.array([zmin,zmax]),nlevs=10,rmClev=0.,sym=True)
-    cmax = np.array([abs(zmin),abs(zmax)]).max()
-    clevs = findNiceContlog(cmax,ndec=2)
-    xr_llhplot(DV,ax=axes[2],clevs=clevs)
+    print('DV range', zmin, zmax)
+    #dlevs = findNiceContours(np.array([zmin,zmax]),nlevs=10,rmClev=0.,sym=True)
+    dmax = np.array([abs(zmin),abs(zmax)]).max()
+    dlevs = findNiceContlog(dmax,ndec=2)
+    print('dlevs', dlevs)
+    pl2 = xr_llhplot(DV,ax=axes[2],clevs=dlevs,cax=False,cmap=dmap,title='E3SM-RASM')
 
+    posn = axes[1].get_position()
+    # create an colorbar axis
+    cax = fig.add_axes([0.,0.,0.8,0.1])
+    cax2 = fig.add_axes([0.,0.,0.8,0.1])
+
+    ## Adjust the positioning and orientation of the colorbar
+    xoff = 0.5
+    yoff = 0.06
+    yoff2 = 0.18
+    cax.set_position([posn.x0-0.5*xoff, posn.y0-yoff, posn.width+xoff, 0.03])
+    cax2.set_position([posn.x0-0.5*xoff, posn.y0-yoff2, posn.width+xoff, 0.03])
+    #cax.set_position([posn.x0, posn.y0-0.02, posn.width, 0.015])
+    cbartitle = Var1ll.long_name
+    cb = plt.colorbar(
+         pl, orientation='horizontal',ticks=clevs,ax=cax,cax=cax,cmap=dmap,
+         #label='%s (%s)'%(cbartitle, Var1ll.units)
+         )
+    cb.ax.tick_params(labelsize=7)
+    cb2 = plt.colorbar(
+         pl2, orientation='horizontal',ticks=dlevs,ax=cax2,cax=cax2,cmap=dmap,
+         label='%s (%s)'%(cbartitle, Var1ll.units)
+         )
+    cb2.ax.tick_params(labelsize=7)
+    
+    plt.show()
 ```

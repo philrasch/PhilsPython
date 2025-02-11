@@ -887,8 +887,93 @@ def interp_to_latlon(data2d,lat,lon,lat_i,lon_i):
     data_i=np.concatenate((data_s,data_n)).reshape(len(lat_i),len(lon_i))
     return data_i
 
-
 def interp_ap(xt, yt, data2d,lat,lon,method=None):
+    """
+    # interp an arbitrary set of points at xt, yt 
+    # from data on an unstructured mesh at lat, lon
+    #
+    # interpolating in lat/lon space has issues with triangulation 
+    # at pole and wrapping at greenwich, so interpolate in stereographic projection:
+    #
+    # input:
+    #    data2d(ncol,...),lat(ncol),lon(ncol): data and coords on unstructured mesh
+    #    data2d can be multidimensional array, but ncol must be first coordinate
+    #    xt, yt: lat and lon coordinates of locations to interpolate to
+    #    method: optional, use cubic interpolation if method='cubic'
+    #
+    # output 
+    #    returns an array with same shape as xt with interpolated data
+    #
+    """
+    from scipy.interpolate import LinearNDInterpolator
+    from scipy.interpolate import CloughTocher2DInterpolator
+    
+    intp2D = LinearNDInterpolator
+    if method == 'cubic':
+        intp2D = CloughTocher2DInterpolator
+
+    ld = data2d.shape[0] # length of first coord of input data
+    lx = lon.shape[0]
+    ly = lat.shape[0]
+    if ((ld != lx) | (ld != ly)):
+        print('inconsistent data2d, lon, lat arrays', ld, lx, ly)
+        raise TypeError("inconsistent input in interp_ap")
+    
+    # mesh grid
+    dproj=ccrs.PlateCarree()
+
+    # select interpolation points located in the nh and sh
+    inds = np.where(yt <= 0)
+    indn = np.where(yt > 0)
+
+    xtn = xt[indn]
+    ytn = yt[indn]
+    xts = xt[inds]
+    yts = yt[inds]
+
+    # take source data in the correct hemisphere, include extra halo points for interpolation
+    # using the full global data sometimes confuses interpolation with points being mapped close to infinity
+    halo = 15 # degrees
+    data2d_h=data2d[lat<halo]
+
+    lon_h=lon[lat<halo]
+    lat_h=lat[lat<halo]
+    coords_in  = ccrs.SouthPolarStereo().transform_points(dproj,lon_h,lat_h)
+
+    dims = list(xt.shape)+list(data2d[0,...].shape)
+    #print('dims',dims)
+    #data_i = np.empty_like(xt,dtype=data2d.dtype)
+    data_i = np.zeros(dims,dtype=data2d.dtype)
+    data_i[:] = np.nan
+
+    data_s = []
+    rs = np.where(lat<halo)
+    if len(rs[0]) == 0:
+        print ('interp_ap no SH data')
+    if len(yts) > 0 and len(rs[0]) > 0:
+        cto = ccrs.SouthPolarStereo().transform_points(dproj,xts,yts)
+        interp = intp2D(coords_in[:,0:2], data2d_h)
+        data_s = interp(cto[:,0],cto[:,1])
+        data_i[inds] = data_s
+
+    data2d_h=data2d[lat>-halo]
+    lon_h=lon[lat>-halo]
+    lat_h=lat[lat>-halo]
+    coords_in  = ccrs.NorthPolarStereo().transform_points(dproj,lon_h,lat_h)
+
+    data_n = []
+    rs = np.where(lat>-halo)
+    if len(rs[0]) == 0:
+        print ('interp_ap no NH data')
+    if len(ytn) > 0 and len(rs[0]) > 0:
+        cto = ccrs.NorthPolarStereo().transform_points(dproj,xtn,ytn)
+        interp = intp2D(coords_in[:,0:2], data2d_h)
+        data_n = interp(cto[:,0],cto[:,1])
+        data_i[indn] = data_n
+
+    return data_i
+
+def interp_ap_v0(xt, yt, data2d,lat,lon,method=None):
     """
     # interp an arbitrary set of points at xt, yt 
     # from data on an unstructured mesh at lat, lon
@@ -1118,6 +1203,14 @@ def xr_getvar(Varname, DS, regtag=None,long_name=None):
             Var = DS['CLOUD'+regtag]
             Var = Var*1.e2
             Var.attrs['units'] = '%'
+        elif Varname == "FLUS":
+            FLNS = DS['FLNS'+regtag]
+            FLDS = DS['FLDS'+regtag]
+            print('FLNS range',FLNS.min().values,FLNS.max().values,
+                  'FLDS range',FLDS.min().values,FLDS.max().values)
+            Var = (DS['FLNS'+regtag]+DS['FLDS'+regtag]).rename(Varname)
+            print('FLUS range',Var.min().values,Var.max().values)
+            Var.attrs['long_name'] = 'Upward Longwave at Surface'
         elif Varname == "Q":
             Var = DS['Q'+regtag]
             Var = Var*1.e3
@@ -1425,7 +1518,8 @@ def xr_cshplot(xrVar, xrLon, xrLat, dinc=None, plotproj=None, ax=None, cax=None,
     ax.coastlines(linewidth=1,color='blue')
     return pl
 
-def xr_llhplot(xrVar, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None, cbartitle=None):
+def xr_llhplot(xrVar, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, cmap=None, title=None, cbartitle=None,
+               contcolor=None):
     """xr_llhplot xarray lat lon horizontal plot
     """
     #print(' entering xr_llhplot', xrVar)
@@ -1470,29 +1564,32 @@ def xr_llhplot(xrVar, plotproj=None, ax=None, cax=None,ylabels=None,clevs=None, 
         #ax = plt.gca()
         ax = plt.axes(projection=plotproj)
 
-    if cax is None: cax = ax
     pl = ax.contourf(xv, yv, data_regridded, levels=clevs, # vmin=zmin, vmax=zmax,
                      norm=norm, cmap=cmap,
                      extend=extend, transform=ccrs.PlateCarree())
 
-    if cbartitle is None:
-        cbartitle = xrVar.long_name
-        
-    # Add colorbar to plot
-    cb = plt.colorbar(
-        pl, orientation='horizontal',ticks=clevs,ax=cax,
-        label='%s (%s)'%(cbartitle, xrVar.units), pad=0.1
-    )
+    if cax is None: cax = ax
+    if cax != False:
+        if cbartitle is None:
+            cbartitle = xrVar.long_name
+            
+        # Add colorbar to plot
+        cb = plt.colorbar(
+            pl, orientation='horizontal',ticks=clevs,ax=cax,
+            label='%s (%s)'%(cbartitle, xrVar.units), pad=0.1
+        )
+        cb.ax.tick_params(labelsize=8)
+
     if not title is None:
         ax.set_title(title)
         
-    cb.ax.tick_params(labelsize=8)
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
                       linewidth=2, color='gray', alpha=0.5)
     gl.left_labels=ylabels
     gl.right_labels=ylabels
-    ax.coastlines(linewidth=1,color='blue')
-    return
+    if contcolor is None: contcolor='black'
+    ax.coastlines(linewidth=0.8,color=contcolor)
+    return pl
 
 def xr_cshplot_v1(xrVar, xrLon, xrLat):
     """xr_cshplot xarray cubed sphere horizontal plot
