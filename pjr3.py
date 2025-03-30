@@ -1753,7 +1753,27 @@ def make_GA_ts2(Varname, s3_path ):
     #print('twgts',twgts)
     #print('xxx',DS1.time)
     Var1 = xr_getvar(Varname,DS1)
-    area = DS1['area']
+    if 'area' in DS1:
+        area = DS1['area']
+        print('area on DS1')
+    else: 
+        if 'ncol' in DS1.dims:
+            #print ('get CS data')
+            #areafile = '~/NetCDF_Files/F2010_PJR1.eam.h0.0001-01.nc'
+            areafile = '~/NetCDF_Files/ne30pg2.nc'
+            DSA = xr.open_mfdataset(areafile)
+            if len(DSA['ncol']) != len(DS1['ncol']):
+                raise ValueError('area file mismatch')
+            area = DSA.area
+        else:
+            #print('calculating fv area weights')
+            lat = Var1['lat'].values
+            lon = Var1['lon'].values
+            aread = make_fvarea(lon,lat)
+            area = xr.DataArray(aread, dims=['lat','lon'], coords={'lon':lon,'lat':lat})
+            area.attrs['units']='steradians'
+    #print('area',area)
+
     #print('Var1',Var1)
     #1./0.    
     wdims = area.dims
