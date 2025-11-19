@@ -8,9 +8,9 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.15.2
   kernelspec:
-    display_name: pjrpy3
+    display_name: Python [conda env:pjrpy3] *
     language: python
-    name: pjrpy3
+    name: conda-env-pjrpy3-py
 ---
 
 ```python
@@ -35,17 +35,21 @@ xr.set_options(keep_attrs=True)
 #print('DS',DS)
 weights = DS.area
 weights.name = 'weights'
-Var = DS.PRECT
-Var = Var*8.64e7
-Var.attrs['units'] = 'mm/day'
+#Var = DS.PRECT
+#Var = Var*8.64e7
+#Var.attrs['units'] = 'mm/day'
+#Var = xr_getvar('PRECT',DS)
+Var = xr_getvar('TREFHT',DS)-273.15
 
-Var = DS.PCONVT
-Var = Var/100.
-Var.attrs['units'] = 'hPa'
-print('Var range ',Var.min().values, Var.max().values)
-Var.attrs['units'] = 'm'
-Var = -7.1e3*np.log(Var/1000.)  # rough conversion to m using 7km scale height
-Var.attrs['long_name'] = 'convection top height'
+
+if False:
+    Var = DS.PCONVT
+    Var = Var/100.
+    Var.attrs['units'] = 'hPa'
+    print('Var range ',Var.min().values, Var.max().values)
+    Var.attrs['units'] = 'm'
+    Var = -7.1e3*np.log(Var/1000.)  # rough conversion to m using 7km scale height
+    Var.attrs['long_name'] = 'convection top height'
 
 #Var = DS.PRECC/DS.PRECT
 #Var.attrs['long_name'] = 'frac of precip that is convective'
@@ -144,7 +148,8 @@ zmin = dsub.min()
 
 dataproj=ccrs.PlateCarree()    # data is always assumed to be lat/lon
 #plotproj=ccrs.Orthographic(central_latitude=0,central_longitude=55)   # any projections should work 
-plotproj=ccrs.Robinson(central_longitude=240)   # any projections should work 
+#plotproj=ccrs.Robinson(central_longitude=240)   # any projections should work 
+plotproj=ccrs.Mollweide(central_longitude=110)   # any projections should work 
 ax = plt.axes(projection=plotproj)
 ax.set_global()
 ax.coastlines(linewidth=0.2,color='white')
