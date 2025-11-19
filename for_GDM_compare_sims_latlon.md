@@ -8,9 +8,9 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.15.2
   kernelspec:
-    display_name: pjrpy3
+    display_name: Python [conda env:pjrpy3] *
     language: python
-    name: pjrpy3
+    name: conda-env-pjrpy3-py
 ---
 
 **compare two cases over the globe assuming they are on lat/lon grid at same resolution**

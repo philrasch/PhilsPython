@@ -5,7 +5,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.5
+      jupytext_version: 1.15.2
   kernelspec:
     display_name: Python [conda env:pjrpy3] *
     language: python
@@ -65,7 +65,7 @@ print(a1,a2,a3)
 ```
 
 ```python
-decade = np.array([0.,1.,2.,3.,4.,5.,6.,7.])*10+2020
+decade = np.array([0.,1.,2.,3.,4.,5.,6.,7.])*10+2021
 plt.plot(decade,em1)
 plt.plot(decade,em2)
 plt.plot(decade,em3)
@@ -93,7 +93,7 @@ ax.plot(decade,em3,'d',label='en3')
 # change font size for x axis
 #ax.xaxis.get_label().set_fontsize(20)
 ax.legend()
-plt.savefig('Emissions.pdf',format='pdf',dpi=300)
+plt.savefig('UKESM_Emissions.pdf',format='pdf',dpi=300)
 plt.show()
 #ax.xaxis.get_label().get_fontsize()
 ```
@@ -115,7 +115,7 @@ ax.plot(decade,f3,'d',label='en3')
 #ax.xaxis.get_label().set_fontsize(20)
 ax.legend()
 #ax.xaxis.get_label().get_fontsize()
-plt.savefig('Forcing.pdf',format='pdf',dpi=300)
+plt.savefig('UKESM_Forcing.pdf',format='pdf',dpi=300)
 plt.show()
 ```
 
