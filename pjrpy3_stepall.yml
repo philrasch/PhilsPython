@@ -26,7 +26,6 @@ dependencies:
   - nodejs
   - regionmask
   - nc-time-axis
-  - pygeos
   - cartopy
   - nco
   - pynco
