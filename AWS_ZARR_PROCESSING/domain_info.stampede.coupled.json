@@ -1,0 +1,13 @@
+[
+    ["lnd","clm2","h0","month_1",{"time":12},"time",["time","mcdate","mcsec","nstep","date_written","time_written"]],
+    ["ocn","pop","h","month_1",{"time":12},"time",["time"]],
+    ["atm","cam","h0","month_1",{"time":12},"time",["time","datesec","date","date_written","time_written"]],
+    ["atm","cam","h1","day_1",{"time":5},"time",["time","datesec","date","date_written","time_written"]],
+    ["atm","cam","h2","hour_6",{"time":20},"time",["time","datesec","date","date_written","time_written"]],
+    ["ocn","pop","h.ecosys.nday1","day_1",{"time":5},"time",["time"]],
+    ["ocn","pop","h.nday1","day_1",{"time":5},"time",["time"]],
+    ["ocn","pop","h.ecosys.nyear1","year_1",{"time":10},"time",["time"]],
+    ["ice","cice","h","month_1",{"time":12},"time",["time"]],
+    ["glc","cism","h","year_1",{"time":10},"time",["time"]],
+    ["rof","mosart","h0","month_1",{"time":12},"time",["time"]]
+]
